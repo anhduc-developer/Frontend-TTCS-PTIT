@@ -5,3 +5,14 @@ Cách cấu hình & triển khai:
 3. Mở terminal & chạy lệnh: npm i
    4.Chạy lệnh: npm run preview
 4. Trên trình duyệt mở: http:localhost:4173
+
+====
+Author:
+Anh Duc Mai
+
+====Contact me====
+facebook: https://www.facebook.com/tomorrowduc/
+github: https://github.com/anhduc-developer
+mail: tomorrowduc@gmail.com
+
+====Thanks for "Readme"====
