@@ -194,7 +194,7 @@ const LayoutAdmin = () => {
             onCollapse={(value) => setCollapsed(value)}
           >
             <div style={{ height: 32, margin: 16, textAlign: "center" }}>
-              <BugOutlined /> ADMIN
+              <BugOutlined /> {user?.role?.name}
             </div>
             <Menu
               selectedKeys={[activeMenu]}

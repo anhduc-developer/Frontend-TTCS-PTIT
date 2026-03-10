@@ -121,12 +121,14 @@ const ChangePassword = () => {
     });
     setIsSubmitting(false);
 
-    if (res) {
+    if (res && res.statusCode === 200) {
       Modal.success({
         title: "Đổi mật khẩu thành công",
         content: "Vui lòng đăng nhập lại để tiếp tục sử dụng hệ thống.",
         okText: "Đăng nhập lại",
         onOk() {
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
           window.location.href = "/login";
         },
       });
@@ -207,14 +209,16 @@ const UserUpdateInfo = ({ onClose }: IUserUpdateInfoProps) => {
   const user = useAppSelector((state) => state.account.user);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // fill dữ liệu user vào form
   useEffect(() => {
     if (user) {
+      form.resetFields();
       form.setFieldsValue({
-        name: user.name,
-        email: user.email,
-        age: user.age,
-        gender: user.gender,
-        address: user.address,
+        name: user?.name,
+        email: user?.email,
+        age: user?.age,
+        gender: user?.gender,
+        address: user?.address,
       });
     }
   }, [user, form]);
@@ -233,7 +237,6 @@ const UserUpdateInfo = ({ onClose }: IUserUpdateInfoProps) => {
       if (res) {
         message.success("Cập nhật thông tin thành công");
 
-        // chỉ update phần thay đổi
         dispatch(setUserProfile(res.data));
         onClose(false);
       } else {
@@ -251,9 +254,20 @@ const UserUpdateInfo = ({ onClose }: IUserUpdateInfoProps) => {
       setIsSubmitting(false);
     }
   };
-
+  console.log("user redux:", user);
   return (
-    <Form layout="vertical" form={form} onFinish={onFinish}>
+    <Form
+      layout="vertical"
+      form={form}
+      onFinish={onFinish}
+      initialValues={{
+        name: user?.name,
+        email: user?.email,
+        age: user?.age,
+        gender: user?.gender,
+        address: user?.address,
+      }}
+    >
       <Row gutter={[20, 20]}>
         <Col span={24}>
           <Form.Item
@@ -301,6 +315,7 @@ const UserUpdateInfo = ({ onClose }: IUserUpdateInfoProps) => {
               options={[
                 { label: "Nam", value: "MALE" },
                 { label: "Nữ", value: "FEMALE" },
+                { label: "Other", value: "OTHER" },
               ]}
             />
           </Form.Item>
@@ -321,7 +336,6 @@ const UserUpdateInfo = ({ onClose }: IUserUpdateInfoProps) => {
     </Form>
   );
 };
-
 const JobByEmail = (props: any) => {
   const [form] = Form.useForm();
   const user = useAppSelector((state) => state.account.user);

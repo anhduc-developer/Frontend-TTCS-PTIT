@@ -80,7 +80,13 @@ export const ALL_PERMISSIONS = {
       module: "ROLES",
     },
   },
-
+  SKILLS: {
+    GET_PAGINATE: {
+      method: "GET",
+      apiPath: "/api/v1/skills",
+      module: "SKILLS",
+    },
+  },
   USERS: {
     GET_PAGINATE: { method: "GET", apiPath: "/api/v1/users", module: "USERS" },
     CREATE: { method: "POST", apiPath: "/api/v1/users", module: "USERS" },
@@ -114,4 +120,5 @@ export const ALL_MODULES = {
   USERS: "USERS",
   SUBSCRIBERS: "SUBSCRIBERS",
   DASHBOARD: "DASHBOARD",
+  SKILLS: "SKILLS",
 };

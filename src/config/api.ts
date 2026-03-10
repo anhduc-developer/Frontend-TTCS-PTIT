@@ -58,7 +58,7 @@ export const callChangePassword = (data: {
   oldPassword: string;
   newPassword: string;
 }) => {
-  return axios.post("/api/v1/users/change-password", data);
+  return axios.post<IBackendRes<any>>("/api/v1/users/change-password", data);
 };
 export const callUpdateProfile = (data: any) => {
   return axios.put("/api/v1/users/profile", data);
