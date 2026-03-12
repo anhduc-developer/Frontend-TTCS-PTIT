@@ -9,7 +9,7 @@ import {
 import { Space, message, notification, Popconfirm } from "antd";
 import { useState, useRef } from "react";
 import dayjs from "dayjs";
-import { callDeleteResume } from "@/config/api";
+import { callDeleteResume, callFetchJob } from "@/config/api";
 import queryString from "query-string";
 import { fetchResume } from "@/redux/slice/resumeSlide";
 import ViewDetailResume from "@/components/admin/resume/view.resume";
@@ -94,6 +94,30 @@ const ResumePage = () => {
     },
 
     {
+      title: "Job",
+      dataIndex: "jobId",
+      hideInTable: true,
+      renderFormItem: () => (
+        <ProFormSelect
+          showSearch
+          placeholder="Chọn Job"
+          request={async () => {
+            const res = await callFetchJob("page=1&size=100");
+
+            if (res?.data?.result) {
+              return res.data.result.map((item: any) => ({
+                label: item.name,
+                value: item.id,
+              }));
+            }
+
+            return [];
+          }}
+        />
+      ),
+    },
+
+    {
       title: "Company",
       dataIndex: "companyName",
       hideInSearch: true,
@@ -129,7 +153,6 @@ const ResumePage = () => {
       hideInSearch: true,
       render: (_, entity) => (
         <Space>
-          {/* VIEW */}
           <EditOutlined
             style={{
               fontSize: 18,
@@ -142,7 +165,6 @@ const ResumePage = () => {
             }}
           />
 
-          {/* DELETE - ONLY SUPER_ADMIN */}
           <Access permission={ALL_PERMISSIONS.RESUMES.DELETE}>
             <Popconfirm
               title="Xác nhận xóa Resume"
@@ -166,12 +188,25 @@ const ResumePage = () => {
     },
   ];
 
-  const buildQuery = (params: any, sort: any, filter: any) => {
+  const buildQuery = (params: any, sort: any) => {
     const clone = { ...params };
 
+    let filters: string[] = [];
+
+    // filter status
     if (clone?.status?.length) {
-      clone.filter = sfIn("status", clone.status).toString();
+      filters.push(sfIn("status", clone.status).toString());
       delete clone.status;
+    }
+
+    // filter job
+    if (clone?.jobId) {
+      filters.push(sfIn("job.id", [clone.jobId]).toString());
+      delete clone.jobId;
+    }
+
+    if (filters.length) {
+      clone.filter = filters.join(" and ");
     }
 
     clone.page = clone.current;
@@ -180,22 +215,23 @@ const ResumePage = () => {
     delete clone.current;
     delete clone.pageSize;
 
-    let temp = queryString.stringify(clone);
+    let temp = queryString.stringify(clone, { encode: true });
 
     let sortBy = "";
-    if (sort && sort.status) {
+
+    if (sort?.status) {
       sortBy =
         sort.status === "ascend" ? "sort=status,asc" : "sort=status,desc";
     }
 
-    if (sort && sort.createdAt) {
+    if (sort?.createdAt) {
       sortBy =
         sort.createdAt === "ascend"
           ? "sort=createdAt,asc"
           : "sort=createdAt,desc";
     }
 
-    if (sort && sort.updatedAt) {
+    if (sort?.updatedAt) {
       sortBy =
         sort.updatedAt === "ascend"
           ? "sort=updatedAt,asc"
@@ -221,8 +257,8 @@ const ResumePage = () => {
           loading={isFetching}
           columns={columns}
           dataSource={resumes}
-          request={async (params, sort, filter: any): Promise<any> => {
-            const query = buildQuery(params, sort, filter);
+          request={async (params, sort): Promise<any> => {
+            const query = buildQuery(params, sort);
             dispatch(fetchResume({ query }));
 
             return {
