@@ -1,0 +1,25 @@
+/* Hiệu ứng xoay vô tận */
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Class áp dụng cho thẻ img logo */
+.logo-react-spin {
+  height: 40px; /* Tùy chỉnh kích thước logo */
+  width: 40px;
+  animation: logo-spin infinite 20s linear;
+  display: block;
+}
+#nprogress .bar {
+  background: #00b14f !important;
+  height: 3px !important;
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px #00b14f, 0 0 5px #00b14f !important;
+}
