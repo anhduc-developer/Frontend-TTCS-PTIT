@@ -23,11 +23,13 @@ import {
 } from "@ant-design/icons";
 import { useNavigate, Link } from "react-router-dom";
 import { callResgister } from "../../services/api.service";
+import { useTranslation } from "react-i18next";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const Register = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -37,11 +39,11 @@ const Register = () => {
     const res = await callResgister(values);
 
     if (res && res.data) {
-      message.success("Đăng ký tài khoản thành công!");
+      message.success(t("auth.registerSuccess"));
       navigate("/login");
     } else {
       notification.error({
-        message: "Có lỗi xảy ra",
+        message: t("auth.registerError"),
         description:
           res.message && Array.isArray(res.message)
             ? res.message[0]
@@ -76,7 +78,7 @@ const Register = () => {
       >
         <div style={{ textAlign: "center", marginBottom: 30 }}>
           <Title level={2} style={{ marginBottom: 5 }}>
-            Tạo Tài Khoản
+            {t("header.register")}
           </Title>
           <Text type="secondary">
             Cung cấp thông tin để bắt đầu hành trình của bạn
@@ -94,18 +96,20 @@ const Register = () => {
             {/* NAME */}
             <Col span={24}>
               <Form.Item
-                label="Họ và tên"
+                label={t("form.name")}
                 name="name"
-                rules={[{ required: true, message: "Vui lòng nhập họ tên!" }]}
+                rules={[
+                  { required: true, message: t("auth.pleaseEnterEmail") },
+                ]}
               >
-                <Input prefix={<UserOutlined />} placeholder="Nguyễn Văn A" />
+                <Input prefix={<UserOutlined />} placeholder={t("form.name")} />
               </Form.Item>
             </Col>
 
             {/* EMAIL */}
             <Col span={24}>
               <Form.Item
-                label="Email"
+                label={t("form.email")}
                 name="email"
                 rules={[
                   { required: true, message: "Vui lòng nhập Email!" },
@@ -122,7 +126,7 @@ const Register = () => {
             {/* AGE & GENDER */}
             <Col span={12} xs={24} md={12}>
               <Form.Item
-                label="Tuổi"
+                label={t("form.age")}
                 name="age"
                 rules={[{ required: true, message: "Nhập tuổi!" }]}
               >
@@ -138,11 +142,11 @@ const Register = () => {
 
             <Col span={12} xs={24} md={12}>
               <Form.Item
-                label="Giới tính"
+                label={t("form.gender")}
                 name="gender"
                 rules={[{ required: true, message: "Chọn giới tính!" }]}
               >
-                <Select placeholder="Chọn giới tính">
+                <Select placeholder={t("form.selectPlaceholder")}>
                   <Option value="MALE">Nam</Option>
                   <Option value="FEMALE">Nữ</Option>
                   <Option value="OTHER">Khác</Option>
@@ -153,13 +157,13 @@ const Register = () => {
             {/* ADDRESS */}
             <Col span={24}>
               <Form.Item
-                label="Địa chỉ"
+                label={t("form.address")}
                 name="address"
                 rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
               >
                 <Input
                   prefix={<HomeOutlined />}
-                  placeholder="Hà Nội, Việt Nam"
+                  placeholder={t("form.address")}
                 />
               </Form.Item>
             </Col>
@@ -167,7 +171,7 @@ const Register = () => {
             {/* PASSWORD */}
             <Col span={12} xs={24} md={12}>
               <Form.Item
-                label="Mật khẩu"
+                label={t("form.password")}
                 name="password"
                 rules={[{ required: true, message: "Nhập mật khẩu!" }]}
               >
@@ -180,7 +184,7 @@ const Register = () => {
 
             <Col span={12} xs={24} md={12}>
               <Form.Item
-                label="Xác nhận"
+                label={t("form.confirmPassword")}
                 name="confirmPassword"
                 dependencies={["password"]}
                 rules={[
@@ -217,7 +221,7 @@ const Register = () => {
                 border: "none",
               }}
             >
-              ĐĂNG KÝ
+              {t("auth.registerButton")}
             </Button>
           </Form.Item>
         </Form>
@@ -227,15 +231,15 @@ const Register = () => {
         </Divider>
 
         <div style={{ textAlign: "center" }}>
-          <Text type="secondary">Đã có tài khoản? </Text>
+          <Text type="secondary">{t("auth.haveAccount")} </Text>
           <Link to="/login" style={{ fontWeight: 600 }}>
-            Đăng nhập
+            {t("auth.loginNow")}
           </Link>
         </div>
 
         <div style={{ textAlign: "center", marginTop: 15 }}>
           <Link to="/" style={{ color: "#8c8c8c" }}>
-            <ArrowLeftOutlined /> Trang chủ
+            <ArrowLeftOutlined /> {t("auth.home")}
           </Link>
         </div>
       </Card>

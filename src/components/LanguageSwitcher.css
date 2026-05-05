@@ -1,0 +1,8 @@
+.language-switcher {
+  display: inline-block;
+  margin-left: auto;
+}
+
+.language-switcher .ant-select {
+  min-width: 120px;
+}

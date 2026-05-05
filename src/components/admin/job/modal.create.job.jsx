@@ -1,5 +1,4 @@
 import {
-  Button,
   Form,
   Input,
   InputNumber,
@@ -12,12 +11,17 @@ import {
   notification,
 } from "antd";
 import { createJobAPI } from "../../../services/api.service";
-import { useState } from "react";
+import { useState, useContext } from "react"; // Thêm useContext
 import ReactQuill from "react-quill-new";
+import { useTranslation } from "react-i18next";
+import { AuthContext } from "../../context/auth.context"; // Import AuthContext
 
 const { RangePicker } = DatePicker;
 
 const CreateJob = (props) => {
+  const { t } = useTranslation();
+  const { user } = useContext(AuthContext); // Lấy thông tin user (bao gồm role)
+
   const {
     isOpenCreateJob,
     setIsOpenCreateJob,
@@ -25,8 +29,13 @@ const CreateJob = (props) => {
     companyData,
     fetchJobs,
   } = props;
+
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+
+  // Kiểm tra xem user hiện tại có phải là HR hay không
+  const isHR = user?.role?.name === "HR";
+
   const handleCancel = () => {
     setIsOpenCreateJob(false);
     form.resetFields();
@@ -34,66 +43,82 @@ const CreateJob = (props) => {
 
   const onFinish = async (values) => {
     setLoading(true);
-    const data = {
-      name: values.name,
-      skills: values.skills.map((id) => ({ id })),
-      location: values.location,
-      salary: +values.salary,
-      quantity: +values.quantity,
-      level: values.level,
-      company: {
-        id: values.companyId,
-      },
-      startDate: values.startDate,
-      endDate: values.endDate,
-      active: values.active,
-      description: values.description,
-      hot: values.hot,
-    };
-    const res = await createJobAPI(data);
-    if (res.data) {
-      notification.success({
-        title: "Create Job Success!",
-        description: "Tạo mới Job thành công !",
-      });
-      fetchJobs();
-      setIsOpenCreateJob(false);
-      form.resetFields();
-      setLoading(false);
-    } else {
+
+    try {
+      const [start, end] = values.timeRange || [];
+
+      const data = {
+        name: values.name,
+        skills: values.skills.map((id) => ({ id })),
+        location: values.location,
+        salary: +values.salary,
+        quantity: +values.quantity,
+        level: values.level,
+        company: { id: values.companyId },
+        startDate: start?.toISOString(),
+        endDate: end?.toISOString(),
+        active: values.active,
+        hot: values.hot,
+        description: values.description,
+        // Nếu là HR, ép kiểu mặc định là PENDING_APPROVAL cho dù form có gửi gì lên
+        status: isHR ? "PENDING_APPROVAL" : values.status,
+      };
+
+      const res = await createJobAPI(data);
+
+      if (res.data) {
+        notification.success({
+          message: t("job.createSuccess"),
+        });
+        fetchJobs();
+        setIsOpenCreateJob(false);
+        form.resetFields();
+      } else {
+        notification.error({
+          message: t("job.createError"),
+          description: res.message || t("error.checkData"),
+        });
+      }
+    } catch (error) {
       notification.error({
-        title: "Create Job Failed!",
-        description: JSON.stringify(res.messsage),
+        message: t("job.createError"),
+        description: error.message,
       });
     }
+
+    setLoading(false);
   };
 
   return (
     <Modal
-      title="Tạo mới Job"
+      title={t("job.createTitle")}
       open={isOpenCreateJob}
       onCancel={handleCancel}
       width={1000}
       onOk={() => form.submit()}
+      confirmLoading={loading}
     >
       <Form form={form} layout="vertical" onFinish={onFinish}>
-        {/* ROW 1 */}
         <Row gutter={16}>
           <Col span={10}>
-            <Form.Item label="Tên Job" name="name" rules={[{ required: true }]}>
-              <Input placeholder="Nhập tên job" />
+            <Form.Item
+              label={t("job.jobName")}
+              name="name"
+              rules={[{ required: true, message: t("validation.required") }]}
+            >
+              <Input placeholder={t("job.jobNamePlaceholder")} />
             </Form.Item>
           </Col>
 
           <Col span={8}>
             <Form.Item
-              label="Kỹ năng yêu cầu"
+              label={t("job.requiredSkills")}
               name="skills"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
                 mode="multiple"
-                placeholder="Please select a skill"
+                placeholder={t("form.selectPlaceholder")}
                 options={skillData.map((item) => ({
                   label: item.name,
                   value: item.id,
@@ -104,81 +129,108 @@ const CreateJob = (props) => {
 
           <Col span={6}>
             <Form.Item
-              label="Địa điểm"
+              label={t("job.location")}
               name="location"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
-                placeholder="Chọn địa điểm"
+                placeholder={t("job.locationPlaceholder")}
                 options={[
-                  { label: "Hà Nội", value: "HN" },
-                  { label: "Hồ Chí Minh", value: "HCM" },
-                  { label: "Đà Nẵng", value: "DN" },
+                  { label: t("job.locationHN"), value: "HN" },
+                  { label: t("job.locationHCM"), value: "HCM" },
+                  { label: t("job.locationDN"), value: "DN" },
                 ]}
               />
             </Form.Item>
           </Col>
         </Row>
 
-        {/* ROW 2 */}
         <Row gutter={16}>
           <Col span={10}>
             <Form.Item
-              label="Mức lương"
+              label={t("job.salary")}
               name="salary"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <InputNumber
                 style={{ width: "100%" }}
-                placeholder="Nhập lương"
-                addonAfter="đ"
+                placeholder={t("job.salaryPlaceholder")}
               />
             </Form.Item>
           </Col>
 
           <Col span={8}>
             <Form.Item
-              label="Số lượng"
+              label={t("job.quantity")}
               name="quantity"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <InputNumber
                 style={{ width: "100%" }}
-                placeholder="Nhập số lượng"
+                placeholder={t("job.quantityPlaceholder")}
               />
             </Form.Item>
           </Col>
 
           <Col span={6}>
             <Form.Item
-              label="Trình độ"
+              label={t("job.level")}
               name="level"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
-                placeholder="Please select a level"
+                placeholder={t("job.levelPlaceholder")}
                 options={[
-                  { label: "Intern", value: "INTERN" },
-                  { label: "Junior", value: "JUNIOR" },
-                  { label: "Senior", value: "SENIOR" },
-                  { label: "Fresher", value: "FRESHER" },
-                  { label: "Middle", value: "MIDDLE" },
+                  { label: t("job.levelIntern"), value: "INTERN" },
+                  { label: t("job.levelJunior"), value: "JUNIOR" },
+                  { label: t("job.levelSenior"), value: "SENIOR" },
+                  { label: t("job.levelFresher"), value: "FRESHER" },
+                  { label: t("job.levelMiddle"), value: "MIDDLE" },
                 ]}
               />
             </Form.Item>
           </Col>
         </Row>
 
-        {/* ROW 3 */}
+        {/* ẨN STATUS NẾU LÀ HR */}
+        {!isHR && (
+          <Row gutter={16}>
+            <Col span={6}>
+              <Form.Item
+                label={t("job.status")}
+                name="status"
+                rules={[{ required: true, message: t("validation.required") }]}
+                initialValue="PENDING_APPROVAL"
+              >
+                <Select
+                  placeholder={t("common.selectPlaceholder")}
+                  options={[
+                    {
+                      label: t("job.statusPendingPayment"),
+                      value: "PENDING_PAYMENT",
+                    },
+                    {
+                      label: t("job.statusPendingApproval"),
+                      value: "PENDING_APPROVAL",
+                    },
+                    { label: t("job.statusApproved"), value: "APPROVED" },
+                    { label: t("job.statusRejected"), value: "REJECTED" },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        )}
+
         <Row gutter={16}>
-          <Col span={6}>
+          <Col span={12}>
             <Form.Item
-              label="Thuộc Công Ty"
+              label={t("job.company")}
               name="companyId"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
-                placeholder="Chọn công ty"
+                placeholder={t("job.companyPlaceholder")}
                 options={companyData.map((item) => ({
                   label: item.name,
                   value: item.id,
@@ -187,61 +239,51 @@ const CreateJob = (props) => {
             </Form.Item>
           </Col>
 
-          <Col span={5}>
+          <Col span={12}>
             <Form.Item
-              label="Ngày bắt đầu"
-              name="startDate"
-              rules={[{ required: true }]}
+              label={t("job.startDate")}
+              name="timeRange"
+              rules={[{ required: true, message: t("validation.required") }]}
             >
-              <DatePicker style={{ width: "100%" }} />
+              <RangePicker style={{ width: "100%" }} />
             </Form.Item>
           </Col>
+        </Row>
 
-          <Col span={5}>
+        <Row gutter={16}>
+          <Col span={6}>
             <Form.Item
-              label="Ngày kết thúc"
-              name="endDate"
-              rules={[{ required: true }]}
-            >
-              <DatePicker style={{ width: "100%" }} />
-            </Form.Item>
-          </Col>
-
-          {/* Nút Trạng thái Active */}
-          <Col span={4}>
-            <Form.Item
-              label="Trạng thái"
+              label={t("job.active")}
               name="active"
               valuePropName="checked"
               initialValue={true}
             >
-              <Switch checkedChildren="ACTIVE" unCheckedChildren="INACTIVE" />
+              <Switch />
             </Form.Item>
           </Col>
 
-          {/* MỚI: Nút Bật/Tắt HOT */}
-          <Col span={4}>
+          <Col span={6}>
             <Form.Item
-              label="Tin Hot"
+              label={t("job.hot")}
               name="hot"
               valuePropName="checked"
               initialValue={false}
             >
-              <Switch
-                checkedChildren="HOT"
-                unCheckedChildren="NORMAL"
-                style={{
-                  backgroundColor: form.getFieldValue("hot") ? "#ff4d4f" : "",
-                }} // Tùy chọn: Đổi màu đỏ khi bật
-              />
+              <Switch />
             </Form.Item>
           </Col>
         </Row>
-        <Form.Item label="Miêu tả" name="description">
+
+        <Form.Item
+          label={t("job.description")}
+          name="description"
+          valuePropName="value"
+          getValueFromEvent={(content) => content}
+        >
           <ReactQuill
             theme="snow"
-            placeholder="Nhập nội dung miêu tả..."
-            style={{ height: "200px", marginBottom: "50px" }} // Chừa chỗ cho toolbar phía dưới
+            placeholder={t("job.descriptionPlaceholder")}
+            style={{ height: "200px", marginBottom: "50px" }}
           />
         </Form.Item>
       </Form>

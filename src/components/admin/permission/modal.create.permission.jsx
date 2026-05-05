@@ -1,103 +1,144 @@
 import { Col, Form, Input, Modal, notification, Row, Select } from "antd";
 import { createPermissionAPI } from "../../../services/api.service";
+import { useTranslation } from "react-i18next";
 
 const CreatePermission = (props) => {
+  const { t } = useTranslation();
   const { isOpenCreate, setIsOpenCreate, fetchPermissions } = props;
+
   const [form] = Form.useForm();
-  const onFinish = async (values) => {
-    const data = {
-      name: values.name,
-      apiPath: values.apiPath,
-      method: values.method,
-      module: values.module,
-    };
-    const res = await createPermissionAPI(data);
-    if (res.data) {
-      notification.success({
-        title: "Create Permission Success!",
-        description: "Tạo Mới Permission Thành Công!",
-      });
-      setIsOpenCreate(false);
-      fetchPermissions();
-      form.resetFields();
-    } else {
-      notification.error({
-        message: "Error Create Permission!",
-        description: "Lỗi Tạo Mới Permission",
-      });
-    }
-  };
+
   const handleCancel = () => {
     setIsOpenCreate(false);
     form.resetFields();
   };
+
+  const onFinish = async (values) => {
+    try {
+      const data = {
+        name: values.name,
+        apiPath: values.apiPath,
+        method: values.method,
+        module: values.module,
+      };
+
+      const res = await createPermissionAPI(data);
+
+      if (res.data) {
+        notification.success({
+          message: t("permission.createSuccess"),
+        });
+
+        fetchPermissions();
+        handleCancel();
+      } else {
+        notification.error({
+          message: t("message.error"),
+          description: res.message || t("error.checkData"),
+        });
+      }
+    } catch (error) {
+      const msg = error?.response?.data?.message || error?.message || "";
+
+      const isDuplicate =
+        msg.toLowerCase().includes("duplicate") ||
+        msg.toLowerCase().includes("exists") ||
+        msg.toLowerCase().includes("constraint");
+
+      notification.error({
+        message: t("message.error"),
+        description: isDuplicate
+          ? "Permission already exists"
+          : t("error.tryAgain"),
+      });
+    }
+  };
+
   return (
     <Modal
-      title="Tạo mới Job"
+      title={t("permission.createTitle")}
       open={isOpenCreate}
       onCancel={handleCancel}
-      width={1000}
       onOk={() => form.submit()}
+      width={800}
+      okText={t("common.confirm")}
+      cancelText={t("common.cancel")}
     >
       <Form form={form} layout="vertical" onFinish={onFinish}>
+        {/* ROW 1 */}
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="Tên Permission"
+              label={t("permission.permissionName")}
               name="name"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
-              <Input placeholder="Nhập tên permisison" />
+              <Input placeholder={t("permission.permissionNamePlaceholder")} />
             </Form.Item>
           </Col>
 
           <Col span={12}>
             <Form.Item
-              label="Method"
+              label={t("permission.method")}
               name="method"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
-                placeholder="Chọn method"
+                placeholder={t("permission.methodPlaceholder")}
                 options={[
-                  { label: "GET", value: "GET" },
-                  { label: "POST", value: "POST" },
-                  { label: "PUT", value: "PUT" },
-                  { label: "DELETE", value: "DELETE" },
+                  { label: t("permission.methodGET"), value: "GET" },
+                  { label: t("permission.methodPOST"), value: "POST" },
+                  { label: t("permission.methodPUT"), value: "PUT" },
+                  { label: t("permission.methodDELETE"), value: "DELETE" },
                 ]}
               />
             </Form.Item>
           </Col>
         </Row>
+
+        {/* ROW 2 */}
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="API Path"
+              label={t("permission.apiPath")}
               name="apiPath"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
-              <Input style={{ width: "100%" }} placeholder="Nhập API Path" />
+              <Input placeholder={t("permission.apiPathPlaceholder")} />
             </Form.Item>
           </Col>
+
           <Col span={12}>
             <Form.Item
-              label="Module"
+              label={t("permission.module")}
               name="module"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
-                placeholder="Thuộc Module"
+                placeholder={t("permission.modulePlaceholder")}
                 options={[
-                  { label: "USERS", value: "USERS" },
-                  { label: "JOBS", value: "JOBS" },
-                  { label: "COMPANIES", value: "COMPANIES" },
-                  { label: "PERMISSIONS", value: "PERMISSIONS" },
-                  { label: "SKILLS", value: "SKILLS" },
-                  { label: "RESUMES", value: "RESUMES" },
-                  { label: "FILES", value: "FILES" },
-                  { label: "ROLES", value: "ROLES" },
-                  { label: "SUBSCRIBERS", value: "SUBSCRIBER" },
-                  { label: "DASHBOARDS", value: "DASHBOARDS" },
+                  { label: t("permission.moduleUSERS"), value: "USERS" },
+                  { label: t("permission.moduleJOBS"), value: "JOBS" },
+                  {
+                    label: t("permission.moduleCOMPANIES"),
+                    value: "COMPANIES",
+                  },
+                  {
+                    label: t("permission.modulePERMISSIONS"),
+                    value: "PERMISSIONS",
+                  },
+                  { label: t("permission.moduleSKILLS"), value: "SKILLS" },
+                  { label: t("permission.moduleRESUMES"), value: "RESUMES" },
+                  { label: t("permission.moduleFILES"), value: "FILES" },
+                  { label: t("permission.moduleROLES"), value: "ROLES" },
+                  {
+                    label: t("permission.moduleSUBSCRIBERS"),
+                    value: "SUBSCRIBERS",
+                  }, // ✅ FIX
+                  {
+                    label: t("permission.moduleDASHBOARDS"),
+                    value: "DASHBOARDS",
+                  },
                 ]}
               />
             </Form.Item>
@@ -107,4 +148,5 @@ const CreatePermission = (props) => {
     </Modal>
   );
 };
+
 export default CreatePermission;

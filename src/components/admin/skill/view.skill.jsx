@@ -17,15 +17,17 @@ import {
   Form,
 } from "antd";
 import { callDeleteSkill } from "../../../services/api.service";
-import { useState, useContext } from "react"; // Thêm useContext
+import { useState, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import CreateSkill from "./modal.create.skill";
 import UpdateSkill from "./modal.update.skill";
 import { AuthContext } from "../../context/auth.context"; // Đảm bảo đúng đường dẫn
 import { hasPermission } from "../../../services/helper/permission";
 
 const ViewSkill = (props) => {
+  const { t } = useTranslation();
   const { skillData, fetchSkills, size, page, total } = props;
-  const { user } = useContext(AuthContext); // Lấy thông tin user
+  const { user } = useContext(AuthContext);
   const [form] = Form.useForm();
 
   const [isOpenCreate, setIsOpenCreate] = useState(false);
@@ -54,13 +56,13 @@ const ViewSkill = (props) => {
     const res = await callDeleteSkill(id);
     if (res.data) {
       notification.success({
-        message: "Xóa thành công",
-        description: `Đã xóa kỹ năng có ID: ${id}`,
+        message: t('message.deleteSuccess', 'Xóa thành công'),
+        description: t('skill.deleteId', 'Đã xóa kỹ năng có ID: {{id}}', { id }),
       });
       fetchSkills({ page, size });
     } else {
       notification.error({
-        message: "Lỗi xóa Skill",
+        message: t('message.error', 'Lỗi xóa Skill'),
         description: res.message,
       });
     }
@@ -68,20 +70,20 @@ const ViewSkill = (props) => {
 
   const columns = [
     {
-      title: "STT",
+      title: t('skill.stt', 'STT'),
       width: 80,
       align: "center",
       render: (_, __, index) => (page - 1) * size + index + 1,
     },
     {
-      title: "Name",
+      title: t('skill.name', 'Name'),
       dataIndex: "name",
       render: (text) => (
         <Tag color={text.length > 5 ? "geekblue" : "green"}>{text}</Tag>
       ),
     },
     {
-      title: "Action",
+      title: t('skill.action', 'Action'),
       key: "action",
       width: 120,
       align: "center",
@@ -107,10 +109,10 @@ const ViewSkill = (props) => {
             method: "DELETE",
           }) && (
             <Popconfirm
-              title="Bạn có chắc chắn muốn xóa Skill này?"
+              title={t('skill.confirmDelete', 'Bạn có chắc chắn muốn xóa Skill này?')}
               onConfirm={() => handleDelete(record.id)}
-              okText="Xóa"
-              cancelText="Hủy"
+              okText={t('skill.delete', 'Xóa')}
+              cancelText={t('skill.cancel', 'Hủy')}
             >
               <DeleteOutlined
                 style={{ color: "#ff4d4f", fontSize: 18, cursor: "pointer" }}
@@ -132,9 +134,9 @@ const ViewSkill = (props) => {
           layout="inline"
           style={{ justifyContent: "flex-start", gap: "20px" }}
         >
-          <Form.Item name="name" label={<b>Tên Skill</b>}>
+          <Form.Item name="name" label={<b>{t('skill.skillName', 'Tên Skill')}</b>}>
             <Input
-              placeholder="Nhập tên skill cần tìm..."
+              placeholder={t('skill.searchPlaceholder', 'Nhập tên skill cần tìm...')}
               style={{ width: 300 }}
               allowClear
             />
@@ -147,10 +149,10 @@ const ViewSkill = (props) => {
                 icon={<SearchOutlined />}
                 htmlType="submit"
               >
-                Tìm kiếm
+                {t('common.search', 'Tìm kiếm')}
               </Button>
               <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                Làm lại
+                {t('common.reset', 'Làm lại')}
               </Button>
             </Space>
           </Form.Item>
@@ -158,7 +160,7 @@ const ViewSkill = (props) => {
       </Card>
 
       <Card
-        title={<b>Danh sách Skill</b>}
+        title={<b>{t('skill.listTitle', 'Danh sách Skill')}</b>}
         extra={
           /* Nút Thêm mới: Kiểm tra quyền POST */
           hasPermission(user, {
@@ -170,7 +172,7 @@ const ViewSkill = (props) => {
               icon={<PlusOutlined />}
               onClick={() => setIsOpenCreate(true)}
             >
-              Thêm mới
+              {t('common.addNew', 'Thêm mới')}
             </Button>
           )
         }
@@ -186,7 +188,7 @@ const ViewSkill = (props) => {
             showSizeChanger: true,
             onChange: (p, s) => fetchSkills({ page: p, size: s }),
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} trên ${total} skills`,
+              t('skill.paginationText', '{{start}}-{{end}} trên {{total}} skills', { start: range[0], end: range[1], total }),
           }}
         />
       </Card>

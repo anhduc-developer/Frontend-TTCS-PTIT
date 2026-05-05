@@ -11,11 +11,13 @@ import {
   notification,
   Card,
 } from "antd";
+import { useTranslation } from "react-i18next";
 import { callPutRoleAPI } from "../../../services/api.service";
 
 const { Panel } = Collapse;
 
 const UpdateRole = (props) => {
+  const { t } = useTranslation();
   const {
     isOpenUpdate,
     setIsOpenUpdate,
@@ -23,9 +25,10 @@ const UpdateRole = (props) => {
     fetchRoles,
     dataUpdateRole,
   } = props;
+
   const [form] = Form.useForm();
 
-  // 1. Group permission theo module (Giữ nguyên logic của bạn)
+  // Group permission theo module
   const groupPermissions = (data = []) => {
     const result = [];
     data.forEach((item) => {
@@ -44,17 +47,15 @@ const UpdateRole = (props) => {
 
   const groupedData = groupPermissions(permissionData);
 
-  // 2. Fix quan trọng: Set dữ liệu vào Form
+  // Set data vào form
   useEffect(() => {
     if (dataUpdateRole && isOpenUpdate && permissionData?.length) {
       const permissionsObj = {};
 
-      // Bước A: Đánh dấu các permission lẻ mà Role đang có
       dataUpdateRole.permissions?.forEach((p) => {
         permissionsObj[p.id] = true;
       });
 
-      // Bước B: Kiểm tra xem Module đó có được "Check All" hay không
       groupedData.forEach((m) => {
         const allChecked = m.permissions.every((p) =>
           dataUpdateRole.permissions?.some((rp) => rp.id === p.id),
@@ -62,12 +63,11 @@ const UpdateRole = (props) => {
         permissionsObj[m.module] = allChecked;
       });
 
-      // Bước C: Đổ dữ liệu vào form
       form.setFieldsValue({
         name: dataUpdateRole.name,
         active: dataUpdateRole.active,
         description: dataUpdateRole.description,
-        permissions: permissionsObj, // Đối tượng phẳng { id: true, MODULE: true }
+        permissions: permissionsObj,
       });
     }
   }, [dataUpdateRole, isOpenUpdate, permissionData, form]);
@@ -77,106 +77,125 @@ const UpdateRole = (props) => {
     form.resetFields();
   };
 
-  // 3. Xử lý bật/tắt toàn bộ module
+  // Switch all
   const handleSwitchAll = (checked, moduleName) => {
-    const currentPermissions = form.getFieldValue("permissions") || {};
-    const updatedPermissions = { ...currentPermissions };
+    const current = form.getFieldValue("permissions") || {};
+    const updated = { ...current };
 
     const moduleInfo = groupedData.find((m) => m.module === moduleName);
     if (moduleInfo) {
       moduleInfo.permissions.forEach((p) => {
-        updatedPermissions[p.id] = checked;
+        updated[p.id] = checked;
       });
-      updatedPermissions[moduleName] = checked;
+      updated[moduleName] = checked;
     }
 
-    form.setFieldsValue({ permissions: updatedPermissions });
+    form.setFieldsValue({ permissions: updated });
   };
 
-  // 4. Xử lý bật/tắt từng permission lẻ
+  // Switch single
   const handleSingle = (checked, id, moduleName) => {
-    const currentPermissions = form.getFieldValue("permissions") || {};
-    const updatedPermissions = { ...currentPermissions, [id]: checked };
+    const current = form.getFieldValue("permissions") || {};
+    const updated = { ...current, [id]: checked };
 
     const moduleInfo = groupedData.find((m) => m.module === moduleName);
     if (moduleInfo) {
-      const isAllChecked = moduleInfo.permissions.every(
-        (p) => updatedPermissions[p.id],
-      );
-      updatedPermissions[moduleName] = isAllChecked;
+      const isAllChecked = moduleInfo.permissions.every((p) => updated[p.id]);
+      updated[moduleName] = isAllChecked;
     }
 
-    form.setFieldsValue({ permissions: updatedPermissions });
+    form.setFieldsValue({ permissions: updated });
   };
 
   const onFinish = async (values) => {
-    // Chuyển đổi từ Object { id: true } sang Array [{ id: 1 }] để gửi lên server
-    const selectedPermissions = Object.keys(values.permissions || {})
-      .filter((key) => !isNaN(key) && values.permissions[key] === true)
-      .map((id) => ({ id: Number(id) }));
+    try {
+      const selectedPermissions = Object.keys(values.permissions || {})
+        .filter((key) => !isNaN(key) && values.permissions[key] === true)
+        .map((id) => ({ id: Number(id) }));
 
-    const data = {
-      id: dataUpdateRole.id,
-      name: values.name,
-      active: values.active,
-      description: values.description,
-      permissions: selectedPermissions,
-    };
+      const data = {
+        id: dataUpdateRole.id,
+        name: values.name,
+        active: values.active,
+        description: values.description,
+        permissions: selectedPermissions,
+      };
 
-    const res = await callPutRoleAPI(data);
-    if (res.data) {
-      notification.success({ message: "Cập nhật Role thành công!" });
-      handleCancel();
-      fetchRoles();
-    } else {
+      const res = await callPutRoleAPI(data);
+
+      if (res.data) {
+        notification.success({
+          message: t("role.updateSuccess"),
+        });
+
+        handleCancel();
+        fetchRoles();
+      } else {
+        notification.error({
+          message: t("message.error"),
+          description: res.message || t("error.checkData"),
+        });
+      }
+    } catch (error) {
       notification.error({
-        message: "Lỗi cập nhật",
-        description: res.message || "Vui lòng thử lại",
+        message: t("message.error"),
+        description: t("error.tryAgain"),
       });
     }
   };
 
   return (
     <Modal
-      title="Cập nhật Role"
+      title={t("role.updateTitle")}
       open={isOpenUpdate}
       onOk={() => form.submit()}
       onCancel={handleCancel}
-      width={800}
-      forceRender // Cực kỳ quan trọng để không mất data khi mở modal
-      okText="Cập nhật"
-      cancelText="Hủy"
+      width={1000}
+      okText={t("common.edit")}
+      cancelText={t("common.cancel")}
+      forceRender
+      bodyStyle={{ maxHeight: "70vh", overflow: "auto" }}
     >
       <Form form={form} layout="vertical" onFinish={onFinish}>
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               name="name"
-              label="Tên Role"
-              rules={[{ required: true }]}
+              label={t("role.roleName")}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
-              <Input placeholder="Nhập name" />
+              <Input placeholder={t("role.roleNamePlaceholder")} />
             </Form.Item>
           </Col>
+
           <Col span={12}>
-            <Form.Item name="active" label="Trạng thái" valuePropName="checked">
-              <Switch checkedChildren="ACTIVE" unCheckedChildren="INACTIVE" />
+            <Form.Item
+              name="active"
+              label={t("common.status")}
+              valuePropName="checked"
+            >
+              <Switch
+                checkedChildren={t("common.active")}
+                unCheckedChildren={t("common.inactive")}
+              />
             </Form.Item>
           </Col>
+
           <Col span={24}>
             <Form.Item
               name="description"
-              label="Miêu tả"
-              rules={[{ required: true }]}
+              label={t("common.description")}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
-              <Input.TextArea placeholder="Nhập miêu tả role" />
+              <Input.TextArea placeholder={t("role.descriptionPlaceholder")} />
             </Form.Item>
           </Col>
         </Row>
 
         <p>
-          <b>Quyền hạn</b>
+          <b>{t("role.permissions")}</b>
         </p>
+
         <Collapse ghost>
           {groupedData?.map((item) => (
             <Panel
@@ -197,18 +216,20 @@ const UpdateRole = (props) => {
             >
               <Row gutter={[16, 16]}>
                 {item.permissions?.map((p) => (
-                  <Col span={12} key={p.id}>
-                    <Card size="small" hoverable>
+                  <Col xs={24} md={12} key={p.id}>
+                    <Card size="small">
                       <div
                         style={{
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
+                          gap: 12,
                         }}
                       >
-                        <div>
+                        <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 500 }}>{p.name}</div>
-                          <div style={{ fontSize: 12, color: "#8c8c8c" }}>
+
+                          <div style={{ fontSize: 12, color: "#888" }}>
                             <Tag
                               color={
                                 p.method === "POST"
@@ -222,9 +243,11 @@ const UpdateRole = (props) => {
                             >
                               {p.method}
                             </Tag>
-                            {p.apiPath}
+
+                            <span style={{ marginLeft: 8 }}>{p.apiPath}</span>
                           </div>
                         </div>
+
                         <Form.Item
                           name={["permissions", p.id]}
                           valuePropName="checked"

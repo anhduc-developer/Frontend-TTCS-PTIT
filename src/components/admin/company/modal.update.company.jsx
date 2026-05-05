@@ -10,6 +10,7 @@ import {
   Upload,
 } from "antd";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css"; // Đảm bảo đã import CSS cho Quill
 import {
@@ -18,6 +19,7 @@ import {
 } from "../../../services/api.service";
 
 const UpdateCompany = (props) => {
+  const { t } = useTranslation();
   const {
     isOpenUpdateCompany,
     setIsOpenUpdateCompany,
@@ -84,7 +86,7 @@ const UpdateCompany = (props) => {
         if (uploadRes.data) {
           logo = uploadRes.data.fileName;
         } else {
-          notification.error({ message: "Lỗi upload ảnh!" });
+          notification.error({ message: t("company.imageUploadError") });
           setLoading(false);
           return;
         }
@@ -103,19 +105,19 @@ const UpdateCompany = (props) => {
       const res = await callPutCompany(data);
       if (res.data) {
         notification.success({
-          message: "Cập nhật thành công!",
-          description: "Thông tin công ty đã được cập nhật.",
+          message: t("message.updateSuccess"),
+          description: t("company.details") + " " + t("message.updateSuccess"),
         });
         handleCancel();
         fetchCompanies();
       } else {
         notification.error({
           message: "Lỗi cập nhật",
-          description: res.message || "Có lỗi xảy ra",
+          description: res.message || t("error.errorOccurred"),
         });
       }
     } catch (error) {
-      notification.error({ message: "Lỗi hệ thống, vui lòng thử lại!" });
+      notification.error({ message: t("error.errorOccurred") });
     } finally {
       setLoading(false);
     }
@@ -123,13 +125,13 @@ const UpdateCompany = (props) => {
 
   return (
     <Modal
-      title="Cập nhật Company"
+      title={t("company.updateTitle")}
       open={isOpenUpdateCompany}
       onOk={() => form.submit()}
       onCancel={handleCancel}
       width={800}
-      okText="Cập nhật"
-      cancelText="Hủy"
+      okText={t("message.updateSuccess")}
+      cancelText={t("common.cancel")}
       confirmLoading={loading}
       maskClosable={false}
       forceRender
@@ -143,18 +145,21 @@ const UpdateCompany = (props) => {
         <Row gutter={20}>
           <Col span={20}>
             <Form.Item
-              label="Tên công ty"
+              label={t("form.companyName")}
               name="name"
               rules={[
-                { required: true, message: "Vui lòng nhập tên công ty!" },
+                {
+                  required: true,
+                  message: t("validation.pleaseEnterCompanyName"),
+                },
               ]}
             >
-              <Input placeholder="Nhập tên công ty" />
+              <Input placeholder={t("company.nameInput")} />
             </Form.Item>
           </Col>
           <Col span={4}>
             <Form.Item
-              label="Nổi bật"
+              label={t("company.featured")}
               name="outstanding"
               valuePropName="checked"
             >
@@ -165,7 +170,7 @@ const UpdateCompany = (props) => {
 
         <Row gutter={20}>
           <Col span={8}>
-            <Form.Item label="Ảnh Logo (Click để đổi)">
+            <Form.Item label={t("form.companyLogo")}>
               <Upload
                 listType="picture-card"
                 maxCount={1}
@@ -195,19 +200,24 @@ const UpdateCompany = (props) => {
 
           <Col span={16}>
             <Form.Item
-              label="Địa chỉ"
+              label={t("form.companyAddress")}
               name="address"
-              rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
+              rules={[
+                { required: true, message: t("validation.pleaseEnterAddress") },
+              ]}
             >
-              <Input.TextArea rows={4} placeholder="Nhập địa chỉ công ty" />
+              <Input.TextArea
+                rows={4}
+                placeholder={t("company.addressInput")}
+              />
             </Form.Item>
           </Col>
         </Row>
 
-        <Form.Item label="Miêu tả" name="description">
+        <Form.Item label={t("form.companyDescription")} name="description">
           <ReactQuill
             theme="snow"
-            placeholder="Nhập nội dung miêu tả..."
+            placeholder={t("company.descriptionInput")}
             style={{ height: "200px", marginBottom: "50px" }}
           />
         </Form.Item>

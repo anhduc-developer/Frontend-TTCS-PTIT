@@ -1,59 +1,84 @@
-import { Col, Form, Input, Modal, notification, Row, Switch } from "antd";
-import { callPutSkill, createSkill } from "../../../services/api.service";
+import { Col, Form, Input, Modal, notification, Row } from "antd";
+import { callPutSkill } from "../../../services/api.service";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 const UpdateSkill = (props) => {
+  const { t } = useTranslation();
   const { fetchSkills, isOpenUpdate, setIsOpenUpdate, dataSkillUpdate } = props;
+
   const [form] = Form.useForm();
+
+  // ✅ map data vào form
   useEffect(() => {
     if (dataSkillUpdate && isOpenUpdate) {
-      form.setFieldsValue(dataSkillUpdate);
+      form.setFieldsValue({
+        name: dataSkillUpdate.name,
+      });
     }
   }, [dataSkillUpdate, isOpenUpdate, form]);
+
+  const handleCancel = () => {
+    setIsOpenUpdate(false);
+    form.resetFields();
+  };
+
   const onFinish = async (values) => {
-    const res = await callPutSkill({
-      id: dataSkillUpdate.id,
-      ...dataSkillUpdate,
-      name: values.name,
-    });
-    if (res.data) {
-      notification.success({
-        title: "Update a Skill Success!",
-        description: "Cập nhật skill thành công",
+    try {
+      const res = await callPutSkill({
+        id: dataSkillUpdate.id,
+        name: values.name,
       });
-      fetchSkills();
-      setIsOpenUpdate(false);
-      form.resetFields();
-    } else {
+
+      if (res.data) {
+        notification.success({
+          message: t("skill.updateSuccess"),
+        });
+
+        fetchSkills();
+        handleCancel();
+      } else {
+        notification.error({
+          message: t("message.error"),
+          description: res.message || t("error.checkData"),
+        });
+      }
+    } catch (error) {
+      const msg = error?.response?.data?.message || error?.message || "";
+
+      const isDuplicate =
+        msg.toLowerCase().includes("duplicate") ||
+        msg.toLowerCase().includes("exists") ||
+        msg.toLowerCase().includes("constraint");
+
       notification.error({
-        message: "Error Update Skill",
-        description: JSON.stringify(res.message),
+        message: t("message.error"),
+        description: isDuplicate
+          ? t("skill.alreadyExists")
+          : t("error.tryAgain"),
       });
     }
   };
 
   return (
     <Modal
-      title="Cập nhật Skill"
+      title={t("skill.updateTitle")}
       open={isOpenUpdate}
       onOk={() => form.submit()}
-      onCancel={() => setIsOpenUpdate(false)}
-      width={800}
+      onCancel={handleCancel}
+      width={600}
+      okText={t("common.edit")}
+      cancelText={t("common.cancel")}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        initialValues={{ isActive: true }}
-      >
+      <Form form={form} layout="vertical" onFinish={onFinish}>
         <Row gutter={16}>
-          <Col span={12}>
+          <Col span={24}>
             <Form.Item
               name="name"
-              label="Tên Skill"
-              rules={[{ required: true }]}
+              label={t("skill.skillName")}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
-              <Input placeholder="Nhập name" />
+              <Input placeholder={t("skill.skillNamePlaceholder")} />
             </Form.Item>
           </Col>
         </Row>
@@ -61,4 +86,5 @@ const UpdateSkill = (props) => {
     </Modal>
   );
 };
+
 export default UpdateSkill;

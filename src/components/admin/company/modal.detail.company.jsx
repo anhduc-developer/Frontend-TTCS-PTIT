@@ -1,7 +1,10 @@
 import { UserOutlined, StarFilled } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 import { Avatar, Descriptions, Divider, Drawer, Tag, Empty } from "antd";
+import dayjs from "dayjs";
 
 const CompanyDetail = (props) => {
+  const { t, i18n } = useTranslation();
   const { isOpenDetailCompany, dataCompanyDetail, setIsOpenDetailCompany } =
     props;
 
@@ -10,11 +13,19 @@ const CompanyDetail = (props) => {
     ? `${import.meta.env.VITE_BACKEND_URL}/storage/company/${dataCompanyDetail.logo}`
     : null;
 
+  // Format ngày tháng theo ngôn ngữ hiện tại
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    const formatStr =
+      i18n.language === "vi" ? "DD/MM/YYYY HH:mm:ss" : "MM/DD/YYYY HH:mm:ss";
+    return dayjs(date).format(formatStr);
+  };
+
   return (
     <Drawer
-      title="CHI TIẾT CÔNG TY"
+      title={t("company.detailTitle")}
       placement="right"
-      width={600} // Tăng nhẹ chiều rộng để xem description thoải mái hơn
+      width={600}
       onClose={() => setIsOpenDetailCompany(false)}
       open={isOpenDetailCompany}
     >
@@ -23,7 +34,7 @@ const CompanyDetail = (props) => {
         <Avatar
           size={120}
           src={logoUrl}
-          shape="square" // Logo công ty thường để square hoặc rounded-square sẽ đẹp hơn tròn
+          shape="square"
           icon={<UserOutlined />}
           style={{
             border: "1px solid #f0f0f0",
@@ -41,10 +52,10 @@ const CompanyDetail = (props) => {
         <div style={{ marginBottom: 16 }}>
           {dataCompanyDetail?.outstanding ? (
             <Tag color="volcano" icon={<StarFilled />}>
-              Nổi bật (HOT)
+              {t("common.hot")}
             </Tag>
           ) : (
-            <Tag color="blue">Thông thường</Tag>
+            <Tag color="blue">{t("common.active")}</Tag>
           )}
         </div>
       </div>
@@ -53,28 +64,24 @@ const CompanyDetail = (props) => {
         orientation="left"
         style={{ fontSize: "14px", color: "#8c8c8c" }}
       >
-        Thông tin cơ bản
+        {t("company.details")}
       </Divider>
 
       <Descriptions column={1} bordered size="middle">
-        <Descriptions.Item label="Mã định danh (ID)">
+        <Descriptions.Item label={t("common.id")}>
           <Tag color="geekblue">{dataCompanyDetail?.id}</Tag>
         </Descriptions.Item>
 
-        <Descriptions.Item label="Địa chỉ cụ thể">
+        <Descriptions.Item label={t("form.companyAddress")}>
           {dataCompanyDetail?.address || "N/A"}
         </Descriptions.Item>
 
-        <Descriptions.Item label="Ngày tạo hệ thống">
-          {dataCompanyDetail?.createdAt
-            ? new Date(dataCompanyDetail.createdAt).toLocaleString("vi-VN")
-            : "N/A"}
+        <Descriptions.Item label={t("common.createdAt")}>
+          {formatDate(dataCompanyDetail?.createdAt)}
         </Descriptions.Item>
 
-        <Descriptions.Item label="Cập nhật lần cuối">
-          {dataCompanyDetail?.updatedAt
-            ? new Date(dataCompanyDetail.updatedAt).toLocaleString("vi-VN")
-            : "N/A"}
+        <Descriptions.Item label={t("common.updatedAt")}>
+          {formatDate(dataCompanyDetail?.updatedAt)}
         </Descriptions.Item>
       </Descriptions>
 
@@ -82,7 +89,7 @@ const CompanyDetail = (props) => {
         orientation="left"
         style={{ fontSize: "14px", color: "#8c8c8c", marginTop: 30 }}
       >
-        Mô tả chi tiết
+        {t("company.detailedDescription")}
       </Divider>
 
       {/* Hiển thị Rich Text từ ReactQuill */}
@@ -102,7 +109,7 @@ const CompanyDetail = (props) => {
         ) : (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="Chưa có mô tả chi tiết"
+            description={t("company.noDetailedDescription")}
           />
         )}
       </div>

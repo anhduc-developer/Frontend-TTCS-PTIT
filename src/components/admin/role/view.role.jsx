@@ -23,145 +23,146 @@ import {
 import Text from "antd/es/typography/Text";
 import dayjs from "dayjs";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import CreateRole from "./modal.create.role";
 import { callDeleteRoleAPI } from "../../../services/api.service";
 import UpdateRole from "./modal.update.role";
 
 const ViewRole = (props) => {
+  const { t } = useTranslation();
   const { roleData, page, size, total, permissionData, fetchRoles } = props;
   const [isOpenUpdate, setIsOpenUpdate] = useState(false);
   const [dataUpdateRole, setDataUpdateRole] = useState({});
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [form] = Form.useForm();
-  const onFinish = async (values) => {
-    console.log(">>> check values", values);
+  const [currentFilter, setCurrentFilter] = useState("");
+
+  const onFinish = (values) => {
     let queryParts = [];
-    if (values.name) queryParts.push(`name~'${values.name}'`);
-    if (values.active) {
-      const temp = values.active === "ACTIVE" ? true : false;
-      queryParts.push(`active=${temp}`);
+
+    if (values.name) {
+      queryParts.push(`name~'${values.name}'`);
     }
+
+    if (values.active) {
+      queryParts.push(`active=${values.active === "ACTIVE"}`);
+    }
+
     const filter = queryParts.join(" AND ");
-    console.log(">>>> check filter", filter);
+    setCurrentFilter(filter);
+
     fetchRoles({
       page: 1,
       size,
-      ...(filter && {
-        filter,
-      }),
+      ...(filter && { filter }),
     });
   };
+
   const handleReset = () => {
     form.resetFields();
+    setCurrentFilter("");
     fetchRoles({ page: 1, size });
   };
+
   const handleDelete = async (id) => {
-    const res = await callDeleteRoleAPI(id);
-    if (res.data) {
-      notification.success({
-        title: "Delete a Role Success!",
-        description: "Xóa Role Thành Công",
-      });
-      fetchRoles();
-    } else {
+    try {
+      const res = await callDeleteRoleAPI(id);
+
+      if (res.data) {
+        notification.success({
+          message: t("message.deleteSuccess"),
+        });
+        fetchRoles();
+      } else {
+        notification.error({
+          message: t("message.error"),
+          description: res.message || t("error.checkData"),
+        });
+      }
+    } catch (error) {
       notification.error({
-        message: "Error Delete a Role",
-        description: JSON.stringify(res.message),
+        message: t("message.error"),
+        description: t("error.tryAgain"),
       });
     }
   };
+
   const columns = [
     {
-      title: "Id",
+      title: "ID",
       dataIndex: "id",
       width: 60,
       render: (text) => <a style={{ color: "#1890ff" }}>{text}</a>,
     },
-    { title: "Name", dataIndex: "name", sorter: true },
     {
-      title: "Trạng thái",
-      dataIndex: "active",
-      render: (_, record) => {
-        return (
-          <Tag
-            color={record.active ? "success" : "error"}
-            style={{ borderRadius: "8px", padding: "4px 10px" }}
-          >
-            {record.active ? "ACTIVE" : "INACTIVE"}
-          </Tag>
-        );
-      },
+      title: t("common.name"),
+      dataIndex: "name",
+      sorter: true,
     },
     {
-      title: "Ngày tạo",
+      title: t("common.status"),
+      dataIndex: "active",
+      render: (_, record) => (
+        <Tag color={record.active ? "success" : "error"}>
+          {record.active ? "ACTIVE" : "INACTIVE"}
+        </Tag>
+      ),
+    },
+    {
+      title: t("common.createdAt"),
       dataIndex: "createdAt",
       render: (t) => (t ? dayjs(t).format("DD/MM/YYYY HH:mm") : "-"),
     },
     {
-      title: "Cập Nhật",
+      title: t("common.updatedAt"),
       dataIndex: "updatedAt",
       render: (t) => (t ? dayjs(t).format("DD/MM/YYYY HH:mm") : "-"),
     },
     {
-      title: "Actions",
+      title: t("common.actions"),
       width: 100,
       align: "center",
       render: (_, record) => (
-        <Space size="middle">
+        <Space>
           <EditOutlined
-            style={{ color: "#faad14", fontSize: 18, cursor: "pointer" }}
+            style={{ color: "#faad14", cursor: "pointer" }}
             onClick={() => {
               setIsOpenUpdate(true);
               setDataUpdateRole(record);
             }}
           />
           <Popconfirm
-            title="Bạn có chắc chắn muốn xóa Role này?"
+            title={t("common.confirmDelete")}
             onConfirm={() => handleDelete(record.id)}
           >
-            <DeleteOutlined
-              style={{ color: "#ff4d4f", fontSize: 18, cursor: "pointer" }}
-            />
+            <DeleteOutlined style={{ color: "#ff4d4f", cursor: "pointer" }} />
           </Popconfirm>
         </Space>
       ),
     },
   ];
+
   return (
     <>
-      <Card
-        variant="borderless"
-        style={{ marginBottom: 20, borderRadius: "10px" }}
-      >
-        <Form
-          form={form}
-          name="search_permission"
-          onFinish={onFinish}
-          layout="vertical"
-        >
-          <Row gutter={[24, 16]} align="bottom">
-            <Col span={10}>
-              <Form.Item
-                name="name"
-                label={<b>Name</b>}
-                style={{ marginBottom: 0 }}
-              >
+      {/* FILTER */}
+      <Card style={{ marginBottom: 20 }}>
+        <Form form={form} layout="vertical" onFinish={onFinish}>
+          <Row gutter={[16, 16]}>
+            <Col span={8}>
+              <Form.Item name="name" label={t("common.name")}>
                 <Input
                   prefix={<SearchOutlined />}
-                  placeholder="Nhập tên..."
+                  placeholder={t("common.searchPlaceholder")}
                   allowClear
                 />
               </Form.Item>
             </Col>
-            <Col span={10}>
-              <Form.Item
-                name="active"
-                label={<b>Trạng Thái</b>}
-                style={{ marginBottom: 0 }}
-              >
+
+            <Col span={8}>
+              <Form.Item name="active" label={t("common.status")}>
                 <Select
                   allowClear
-                  placeholder="Trạng Thái"
+                  placeholder={t("common.selectPlaceholder")}
                   options={[
                     { label: "ACTIVE", value: "ACTIVE" },
                     { label: "INACTIVE", value: "INACTIVE" },
@@ -169,39 +170,38 @@ const ViewRole = (props) => {
                 />
               </Form.Item>
             </Col>
-            <Col span={4}>
-              <Space style={{ width: "100%", justifyContent: "flex-end" }}>
-                <Button
-                  type="primary"
-                  icon={<SearchOutlined />}
-                  htmlType="submit"
-                >
-                  Lọc
-                </Button>
-                <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                  Reset
-                </Button>
-              </Space>
+
+            <Col span={8}>
+              <Form.Item label=" " colon={false}>
+                <Space>
+                  <Button
+                    type="primary"
+                    icon={<SearchOutlined />}
+                    htmlType="submit"
+                  >
+                    {t("common.search")}
+                  </Button>
+                  <Button icon={<ReloadOutlined />} onClick={handleReset}>
+                    {t("common.reset")}
+                  </Button>
+                </Space>
+              </Form.Item>
             </Col>
           </Row>
         </Form>
       </Card>
 
+      {/* TABLE */}
       <Card>
-        <Flex
-          justify="space-between"
-          align="center"
-          style={{ marginBottom: 16 }}
-        >
-          <Text strong style={{ fontSize: 16 }}>
-            Danh sách Role
-          </Text>
+        <Flex justify="space-between" style={{ marginBottom: 16 }}>
+          <Text strong>{t("role.listTitle")}</Text>
+
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => setIsOpenCreate(true)}
           >
-            Thêm mới
+            {t("common.addNew")}
           </Button>
         </Flex>
 
@@ -210,26 +210,29 @@ const ViewRole = (props) => {
           dataSource={roleData}
           rowKey="id"
           pagination={{
-            current: page, // Trang hiện tại
-            pageSize: size, // Số lượng hàng mỗi trang
-            total: total, // Tổng số hàng từ Server
+            current: page,
+            pageSize: size,
+            total: total,
             showSizeChanger: true,
-            pageSizeOptions: ["10", "20", "50"],
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} trên ${total} hàng`,
             onChange: (p, s) => {
-              // Gọi lại hàm fetch khi người dùng thao tác phân trang
-              fetchRoles({ page: p, size: s });
+              fetchRoles({
+                page: p,
+                size: s,
+                ...(currentFilter && { filter: currentFilter }),
+              });
             },
           }}
         />
       </Card>
+
+      {/* MODALS */}
       <CreateRole
         isOpenCreate={isOpenCreate}
         setIsOpenCreate={setIsOpenCreate}
         permissionData={permissionData}
         fetchRoles={fetchRoles}
       />
+
       <UpdateRole
         isOpenUpdate={isOpenUpdate}
         setIsOpenUpdate={setIsOpenUpdate}
@@ -240,4 +243,5 @@ const ViewRole = (props) => {
     </>
   );
 };
+
 export default ViewRole;

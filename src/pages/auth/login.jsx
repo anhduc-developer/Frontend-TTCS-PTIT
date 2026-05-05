@@ -18,9 +18,12 @@ import {
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../../components/context/auth.context";
 import { callLogin } from "../../services/api.service";
+import { useTranslation } from "react-i18next";
+
 const { Title, Text } = Typography;
 
 const Login = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const { setUser, setIsAuthenticated } = useContext(AuthContext);
@@ -38,16 +41,16 @@ const Login = () => {
       setLoading(false);
 
       notification.success({
-        message: "Đăng nhập thành công",
-        description: `Chào mừng ${res.data.user.name} quay trở lại!`,
+        message: t("auth.loginSuccess"),
+        description: `${t("auth.welcomeBack")} ${res.data.user.name}!`,
       });
 
       navigate("/");
     } else {
       setLoading(false);
       notification.error({
-        message: "Đăng nhập thất bại",
-        description: res?.message || "Email hoặc mật khẩu không chính xác",
+        message: t("auth.loginFailed"),
+        description: res?.message || t("auth.invalidEmailPassword"),
       });
     }
   };
@@ -92,7 +95,7 @@ const Login = () => {
             <UserOutlined style={{ fontSize: 30, color: "#fff" }} />
           </div>
           <Title level={2} style={{ marginBottom: 5 }}>
-            Đăng Nhập
+            {t("header.login")}
           </Title>
         </div>
 
@@ -106,24 +109,22 @@ const Login = () => {
         >
           <Form.Item
             name="username"
-            rules={[
-              { required: true, message: "Vui lòng nhập Email/Username!" },
-            ]}
+            rules={[{ required: true, message: t("auth.pleaseEnterEmail") }]}
           >
             <Input
               prefix={<UserOutlined style={{ color: "#bfbfbf" }} />}
-              placeholder="Email hoặc Tên đăng nhập"
+              placeholder={t("auth.emailOrUsername")}
               style={{ borderRadius: 8 }}
             />
           </Form.Item>
 
           <Form.Item
             name="password"
-            rules={[{ required: true, message: "Vui lòng nhập mật khẩu!" }]}
+            rules={[{ required: true, message: t("auth.pleaseEnterPassword") }]}
           >
             <Input.Password
               prefix={<LockOutlined style={{ color: "#bfbfbf" }} />}
-              placeholder="Mật khẩu"
+              placeholder={t("auth.enterPassword")}
               style={{ borderRadius: 8 }}
             />
           </Form.Item>
@@ -136,7 +137,7 @@ const Login = () => {
             }}
           >
             <Link to="/" style={{ color: "#1890ff" }}>
-              Trang Chủ
+              {t("auth.home")}
             </Link>
           </div>
 
@@ -155,14 +156,14 @@ const Login = () => {
                 border: "none",
               }}
             >
-              ĐĂNG NHẬP
+              {t("auth.loginButton")}
             </Button>
           </Form.Item>
         </Form>
         <div style={{ textAlign: "center", marginTop: 25 }}>
-          <Text type="secondary">Chưa có tài khoản? </Text>
+          <Text type="secondary">{t("auth.noAccount")} </Text>
           <Link to="/register" style={{ fontWeight: 600 }}>
-            Đăng ký ngay
+            {t("auth.registerNow")}
           </Link>
         </div>
       </Card>

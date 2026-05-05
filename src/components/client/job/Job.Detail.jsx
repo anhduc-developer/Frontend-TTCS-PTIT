@@ -1,4 +1,5 @@
 import { useLocation, useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Button,
   Card,
@@ -14,7 +15,6 @@ import {
   Input,
   Modal,
   Spin,
-  Empty,
   Result,
 } from "antd";
 import {
@@ -38,24 +38,28 @@ import { AuthContext } from "../../context/auth.context";
 import Dragger from "antd/es/upload/Dragger";
 
 const JobDetailPage = () => {
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useContext(AuthContext);
 
   const [job, setJob] = useState(null);
-  const [isPageLoading, setIsPageLoading] = useState(true); // Mặc định là true để check ID
-  const [isNotFound, setIsNotFound] = useState(false); // 🔥 State chặn ID ảo
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fileList, setFileList] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Đồng bộ locale cho Dayjs
+  useEffect(() => {
+    dayjs.locale(i18n.language === "vi" ? "vi" : "en-gb");
+  }, [i18n.language]);
+
   const fetchJobDetail = async () => {
     setIsPageLoading(true);
     try {
       const res = await callFetchJobById(id);
-      // Kiểm tra chặt chẽ res.data và res.data.id
       if (res && res.data && (res.data.id || res.data._id)) {
         setJob(res.data);
         setIsNotFound(false);
@@ -63,7 +67,6 @@ const JobDetailPage = () => {
         setIsNotFound(true);
       }
     } catch (error) {
-      console.error("Fetch job error:", error);
       setIsNotFound(true);
     } finally {
       setIsPageLoading(false);
@@ -79,8 +82,8 @@ const JobDetailPage = () => {
   const handleApplyClick = () => {
     if (!isAuthenticated) {
       notification.warning({
-        message: "Yêu cầu đăng nhập",
-        description: "Vui lòng đăng nhập để thực hiện ứng tuyển!",
+        message: t("auth.requireLogin"),
+        description: t("auth.pleaseLoginToApply"),
       });
       navigate("/login");
       return;
@@ -90,7 +93,7 @@ const JobDetailPage = () => {
 
   const handleUploadResume = async () => {
     if (fileList.length === 0) {
-      message.error("Vui lòng tải lên CV của bạn!");
+      message.error(t("validation.pleaseUploadLogo"));
       return;
     }
 
@@ -109,24 +112,26 @@ const JobDetailPage = () => {
 
         const res = await callCreateResume(dataUpdate);
         if (res && (res.data || res.statusCode === 201)) {
-          message.success("Nộp hồ sơ ứng tuyển thành công!");
+          message.success(t("message.createSuccess"));
           setIsModalOpen(false);
           setFileList([]);
         } else {
           notification.error({
-            message: "Thất bại",
-            description: res.message || "Không thể gửi hồ sơ",
+            message: t("message.error"),
+            description: res.message || t("error.errorOccurred"),
           });
         }
       }
     } catch (err) {
-      notification.error({ message: "Lỗi", description: "Có lỗi xảy ra" });
+      notification.error({
+        message: t("message.error"),
+        description: t("error.errorOccurred"),
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // 1. Màn hình loading khi F5 hoặc nhập tay URL
   if (isPageLoading) {
     return (
       <div
@@ -137,22 +142,21 @@ const JobDetailPage = () => {
           height: "100vh",
         }}
       >
-        <Spin size="large" tip="Đang xác thực thông tin công việc..." />
+        <Spin size="large" tip={t("message.loading")} />
       </div>
     );
   }
 
-  // 2. Màn hình lỗi nếu ID không tồn tại (Nhập tay URL sai)
   if (isNotFound || !job) {
     return (
       <div style={{ padding: "50px 0" }}>
         <Result
           status="404"
           title="404"
-          subTitle="Công việc bạn tìm kiếm không tồn tại hoặc đã hết hạn tuyển dụng."
+          subTitle={t("job.notFoundJob")}
           extra={
             <Button onClick={() => navigate("/")} type="primary">
-              Quay lại trang chủ
+              {t("header.home")}
             </Button>
           }
         />
@@ -160,7 +164,6 @@ const JobDetailPage = () => {
     );
   }
 
-  // 3. Render giao diện chính khi đã có dữ liệu hợp lệ
   return (
     <div
       style={{
@@ -176,7 +179,7 @@ const JobDetailPage = () => {
         onClick={() => navigate(-1)}
         style={{ marginBottom: 20, borderRadius: 6 }}
       >
-        Quay lại
+        {t("job.cancel")}
       </Button>
 
       <Row gutter={[24, 24]}>
@@ -228,7 +231,7 @@ const JobDetailPage = () => {
             >
               <div style={{ minWidth: 150 }}>
                 <Text type="secondary">
-                  <DollarOutlined /> Mức lương
+                  <DollarOutlined /> {t("job.salary")}
                 </Text>
                 <br />
                 <Text strong style={{ color: "#ff4d4f", fontSize: 16 }}>
@@ -237,17 +240,19 @@ const JobDetailPage = () => {
               </div>
               <div style={{ minWidth: 150 }}>
                 <Text type="secondary">
-                  <EnvironmentOutlined /> Địa điểm
+                  <EnvironmentOutlined /> {t("job.location")}
                 </Text>
                 <br />
                 <Text strong>{job.location}</Text>
               </div>
               <div style={{ minWidth: 150 }}>
                 <Text type="secondary">
-                  <UsergroupAddOutlined /> Số lượng
+                  <UsergroupAddOutlined /> {t("job.quantity")}
                 </Text>
                 <br />
-                <Text strong>{job.quantity} người</Text>
+                <Text strong>
+                  {job.quantity} {t("header.member")}
+                </Text>
               </div>
               <Tag color="blue" style={{ fontSize: 14, padding: "2px 10px" }}>
                 {job.level}
@@ -256,7 +261,7 @@ const JobDetailPage = () => {
 
             <div style={{ marginBottom: 25 }}>
               <Text strong style={{ display: "block", marginBottom: 10 }}>
-                Kỹ năng yêu cầu:
+                {t("job.requiredSkills")}:
               </Text>
               <Space size={[8, 8]} wrap>
                 {job.skills?.map((skill) => (
@@ -273,11 +278,11 @@ const JobDetailPage = () => {
             </div>
 
             <Divider />
-            <Title level={4}>Chi tiết công việc</Title>
+            <Title level={4}>{t("job.details")}</Title>
             <div
               style={{ fontSize: 16, lineHeight: 1.8, color: "#434343" }}
               dangerouslySetInnerHTML={{
-                __html: job.description || "Nội dung đang cập nhật...",
+                __html: job.description || t("common.updating"),
               }}
             />
           </Card>
@@ -294,11 +299,11 @@ const JobDetailPage = () => {
               }}
             >
               <div style={{ marginBottom: 20 }}>
-                <Text type="secondary">Hạn nộp hồ sơ:</Text>
+                <Text type="secondary">{t("job.endDate")}:</Text>
                 <Title level={5} style={{ marginTop: 5, color: "#f5222d" }}>
                   {job.endDate
                     ? dayjs(job.endDate).format("DD/MM/YYYY")
-                    : "Đang cập nhật"}
+                    : t("common.updating")}
                 </Title>
               </div>
               <Button
@@ -314,7 +319,7 @@ const JobDetailPage = () => {
                 }}
                 onClick={handleApplyClick}
               >
-                ỨNG TUYỂN NGAY
+                {t("resume.applyJob").toUpperCase()}
               </Button>
             </Card>
 
@@ -346,7 +351,7 @@ const JobDetailPage = () => {
                 block
                 onClick={() => navigate(`/company/${job.company?.id}`)}
               >
-                Xem trang công ty →
+                {t("company.details")} →
               </Button>
             </Card>
           </div>
@@ -354,57 +359,49 @@ const JobDetailPage = () => {
       </Row>
 
       <Modal
-        title="Ứng tuyển công việc"
+        title={t("resume.applyJob")}
         open={isModalOpen}
         onOk={handleUploadResume}
         onCancel={() => setIsModalOpen(false)}
         confirmLoading={isSubmitting}
-        okText="Gửi hồ sơ"
-        cancelText="Hủy"
+        okText={t("resume.statusPending")} // Hoặc key Gửi hồ sơ nếu có
+        cancelText={t("common.cancel")}
         width={600}
       >
         <Divider />
         <Form layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Vị trí">
+              <Form.Item label={t("job.jobName")}>
                 <Input value={job.name} disabled />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Email">
+              <Form.Item label={t("user.userEmail")}>
                 <Input value={user?.email} disabled />
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item label="Hồ sơ CV (PDF, Docx, Max 5MB)" required>
+          <Form.Item label={t("profile.cv")} required>
             <Dragger
               multiple={false}
               maxCount={1}
               beforeUpload={(file) => {
-                // Kiểm tra định dạng file (tùy chọn)
                 const isAllowedType =
                   file.type === "application/pdf" ||
                   file.type ===
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-
                 if (!isAllowedType) {
-                  message.error(
-                    `${file.name} không phải là file PDF hoặc Docx!`,
-                  );
+                  message.error(`${file.name} ${t("error.errorOccurred")}`);
                   return false;
                 }
-
-                // 🔥 Kiểm tra kích thước file (5MB = 5 * 1024 * 1024 bytes)
                 const isLt5M = file.size / 1024 / 1024 < 5;
                 if (!isLt5M) {
-                  message.error("Kích thước CV phải nhỏ hơn 5MB!");
-                  return false; // Chặn không cho lưu vào fileList
+                  message.error(t("validation.maxLength", { max: 5 }));
+                  return false;
                 }
-
-                // Nếu mọi thứ ổn, lưu file vào state
                 setFileList([file]);
-                return false; // Trả về false để Ant Design không tự động upload ngay lập tức
+                return false;
               }}
               onRemove={() => setFileList([])}
               fileList={fileList}
@@ -412,10 +409,8 @@ const JobDetailPage = () => {
               <p className="ant-upload-drag-icon">
                 <InboxOutlined />
               </p>
-              <p className="ant-upload-text">Kéo thả hoặc nhấp để chọn CV</p>
-              <p className="ant-upload-hint">
-                Hỗ trợ file .pdf, .docx (Tối đa 5MB)
-              </p>
+              <p className="ant-upload-text">{t("common.updating")}</p>
+              <p className="ant-upload-hint">.pdf, .docx (Max 5MB)</p>
             </Dragger>
           </Form.Item>
         </Form>

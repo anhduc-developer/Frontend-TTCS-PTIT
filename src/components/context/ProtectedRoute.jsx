@@ -1,9 +1,11 @@
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { AuthContext } from "./auth.context";
 import { Navigate } from "react-router-dom";
 import { Result, Button } from "antd";
 
 const ProtectedRoute = (props) => {
+  const { t } = useTranslation();
   const { isAuthenticated, user } = useContext(AuthContext);
 
   // 1. Kiểm tra đăng nhập
@@ -19,10 +21,10 @@ const ProtectedRoute = (props) => {
       <Result
         status="403"
         title="403"
-        subTitle="Xin lỗi, bạn không có quyền truy cập trang này."
+        subTitle={t("common.accessDenied")}
         extra={
           <Button type="primary" onClick={() => (window.location.href = "/")}>
-            Quay lại trang chủ
+            {t("header.home")}
           </Button>
         }
       />

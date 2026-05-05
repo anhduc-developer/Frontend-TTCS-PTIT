@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Row,
   Col,
@@ -21,6 +22,7 @@ import {
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/vi";
+import "dayjs/locale/en-gb";
 import {
   callFetchCompanyById,
   fetchAllJobs,
@@ -29,50 +31,43 @@ import {
 const { Title, Text } = Typography;
 
 const CompanyDetail = () => {
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
 
-  // State quản lý dữ liệu
   const [company, setCompany] = useState(null);
   const [jobData, setJobData] = useState([]);
-
-  // State quản lý trạng thái hiển thị
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isJobLoading, setIsJobLoading] = useState(false);
   const [isNotFound, setIsNotFound] = useState(false);
 
-  // State phân trang cho Jobs
   const [current, setCurrent] = useState(1);
   const [pageSize, setPageSize] = useState(6);
   const [totalJobs, setTotalJobs] = useState(0);
 
+  // Cấu hình ngôn ngữ cho thời gian (1 giờ trước / 1 hour ago)
   dayjs.extend(relativeTime);
-  dayjs.locale("vi");
+  useEffect(() => {
+    dayjs.locale(i18n.language === "vi" ? "vi" : "en-gb");
+  }, [i18n.language]);
 
-  // 1. Hàm lấy chi tiết công ty - Xử lý nhập URL tay
   const fetchCompanyInfo = async () => {
     setIsPageLoading(true);
     try {
       const res = await callFetchCompanyById(id);
-
-      // KIỂM TRA CHẶT CHẼ: Phải có data và data phải có ID thực sự
       if (res && res.data && (res.data.id || res.data._id)) {
         setCompany(res.data);
         setIsNotFound(false);
       } else {
-        // Trường hợp ID tào lao, API trả về null hoặc {}
         setIsNotFound(true);
       }
     } catch (error) {
-      // Trường hợp API bắn lỗi 400, 404...
       setIsNotFound(true);
     } finally {
       setIsPageLoading(false);
     }
   };
 
-  // 2. Hàm lấy danh sách Jobs của công ty đó
   const fetchJobsByCompany = async () => {
     if (isNotFound || !id) return;
     setIsJobLoading(true);
@@ -94,21 +89,16 @@ const CompanyDetail = () => {
     }
   };
 
-  // Chạy khi ID thay đổi (bao gồm cả khi F5 hoặc nhập tay URL)
   useEffect(() => {
     fetchCompanyInfo();
   }, [id]);
 
-  // Chạy khi thông tin công ty đã hợp lệ và phân trang thay đổi
   useEffect(() => {
     if (id && !isNotFound && company) {
       fetchJobsByCompany();
     }
   }, [id, current, pageSize, isNotFound, !!company]);
 
-  // --- CÁC TRẠNG THÁI RENDER ---
-
-  // 1. Đang tải dữ liệu gốc
   if (isPageLoading) {
     return (
       <div
@@ -119,28 +109,26 @@ const CompanyDetail = () => {
           height: "100vh",
         }}
       >
-        <Spin size="large" tip="Đang xác thực thông tin công ty..." />
+        <Spin size="large" tip={t("message.loading")} />
       </div>
     );
   }
 
-  // 2. Nếu nhập URL sai/ID không tồn tại -> Chặn luôn giao diện trắng
   if (isNotFound) {
     return (
       <Result
         status="404"
         title="404"
-        subTitle="Công ty này không tồn tại hoặc đường dẫn đã bị hỏng."
+        subTitle={t("company.notFound")}
         extra={
           <Button type="primary" onClick={() => navigate("/")}>
-            Về trang chủ
+            {t("header.home")}
           </Button>
         }
       />
     );
   }
 
-  // 3. Nếu không có lỗi và đã load xong, render giao diện chính
   return (
     <div
       style={{ background: "#f5f7f9", minHeight: "100vh", padding: "20px 0" }}
@@ -152,7 +140,7 @@ const CompanyDetail = () => {
           onClick={() => navigate(-1)}
           style={{ marginBottom: 15, padding: 0 }}
         >
-          Quay lại
+          {t("job.cancel")}
         </Button>
 
         <Row gutter={[24, 24]}>
@@ -183,7 +171,7 @@ const CompanyDetail = () => {
                     borderRadius: 2,
                   }}
                 />
-                Giới thiệu công ty
+                {t("company.detailedDescription")}
               </Title>
               <div
                 style={{
@@ -194,7 +182,8 @@ const CompanyDetail = () => {
                 }}
                 className="description-content"
                 dangerouslySetInnerHTML={{
-                  __html: company?.description || "Chưa có mô tả chi tiết...",
+                  __html:
+                    company?.description || t("company.noDetailedDescription"),
                 }}
               />
             </Card>
@@ -235,7 +224,7 @@ const CompanyDetail = () => {
                 </div>
                 <Title level={5}>{company?.name}</Title>
                 <Tag color="purple" icon={<GlobalOutlined />}>
-                  Đã xác thực
+                  {t("header.member")}
                 </Tag>
               </Card>
             </div>
@@ -244,7 +233,9 @@ const CompanyDetail = () => {
 
         <div style={{ marginTop: 40 }}>
           <Divider orientation="left">
-            <Title level={3}>Vị trí đang tuyển ({totalJobs})</Title>
+            <Title level={3}>
+              {t("company.featuredCompanies")} ({totalJobs})
+            </Title>
           </Divider>
 
           <Spin spinning={isJobLoading}>
@@ -280,7 +271,9 @@ const CompanyDetail = () => {
                             ))}
                           </Space>
                         </div>
-                        {job.hot && <Tag color="volcano">HOT</Tag>}
+                        {job.hot && (
+                          <Tag color="volcano">{t("common.hot")}</Tag>
+                        )}
                       </div>
                       <div
                         style={{
@@ -305,9 +298,7 @@ const CompanyDetail = () => {
               ) : (
                 <Col span={24}>
                   <Card style={{ textAlign: "center", borderRadius: 12 }}>
-                    <Text type="secondary">
-                      Công ty hiện chưa đăng tin tuyển dụng mới.
-                    </Text>
+                    <Text type="secondary">{t("home.noCompanyJobs")}</Text>
                   </Card>
                 </Col>
               )}
@@ -322,6 +313,13 @@ const CompanyDetail = () => {
                 total={totalJobs}
                 onChange={(p) => setCurrent(p)}
                 showSizeChanger={false}
+                showTotal={(total, range) =>
+                  t("common.paginationText", {
+                    start: range[0],
+                    end: range[1],
+                    total,
+                  })
+                }
               />
             </div>
           )}

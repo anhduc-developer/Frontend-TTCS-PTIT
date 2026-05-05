@@ -17,11 +17,13 @@ import {
   Table,
 } from "antd";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import ModalUser from "./modal.create.user";
 import UpdateUser from "./modal.update.user";
 import { callDeleteUser } from "../../../services/api.service";
-import UserDetail from "./model.detail.user";
+import UserDetail from "./modal.detail.user";
 const ViewUser = (props) => {
+  const { t } = useTranslation();
   const {
     userData,
     page,
@@ -44,8 +46,8 @@ const ViewUser = (props) => {
     const res = await callDeleteUser(id);
     if (res.data) {
       notification.success({
-        message: "Delete User Success!",
-        description: "Xóa người dùng thành công!",
+        message: t('message.success', 'Delete User Success!'),
+        description: t('message.deleteSuccess', 'Xóa người dùng thành công!'),
       });
       fetchUsers({
         page: page,
@@ -53,7 +55,7 @@ const ViewUser = (props) => {
       });
     } else {
       notification.error({
-        message: "Error Delete User!",
+        message: t('message.error', 'Error Delete User!'),
         description: JSON.stringify(res.error),
       });
     }
@@ -103,27 +105,27 @@ const ViewUser = (props) => {
   };
   const columns = [
     {
-      title: "STT",
+      title: t('user.stt', 'STT'),
       render: (_, record, index) => (
         <div style={{ marginLeft: "15px" }}>
           {(page - 1) * size + index + 1}
         </div>
       ),
     },
-    { title: "Name", dataIndex: "name" },
-    { title: "Email", dataIndex: "email" },
+    { title: t('user.name', 'Name'), dataIndex: "name" },
+    { title: t('user.email', 'Email'), dataIndex: "email" },
     {
-      title: "Role",
+      title: t('user.role', 'Role'),
       render: (_, record) => record?.role?.name || "-",
     },
     {
-      title: "Company",
+      title: t('user.company', 'Company'),
       render: (_, record) => record?.company?.name || "-",
     },
-    { title: "CreatedAt", dataIndex: "createdAt" },
-    { title: "UpdatedAt", dataIndex: "updatedAt" },
+    { title: t('user.createdAt', 'CreatedAt'), dataIndex: "createdAt" },
+    { title: t('user.updatedAt', 'UpdatedAt'), dataIndex: "updatedAt" },
     {
-      title: "Action",
+      title: t('user.action', 'Action'),
       render: (_, record) => (
         <div style={{ display: "flex", gap: 10 }}>
           <EyeOutlined
@@ -141,7 +143,7 @@ const ViewUser = (props) => {
             }}
           />
           <Popconfirm
-            title="Xóa người dùng"
+            title={t('user.confirmDelete', 'Xóa người dùng')}
             onConfirm={() => handleDeleteUser(record.id)}
           >
             <DeleteOutlined style={{ color: "red" }} />
@@ -156,14 +158,14 @@ const ViewUser = (props) => {
       <Card style={{ marginBottom: 20 }}>
         <Space size="large">
           <Input
-            placeholder="Nhập tên"
+            placeholder={t('user.userNamePlaceholder', 'Nhập tên')}
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
             style={{ width: 250 }}
             onPressEnter={handleSearch}
           />
           <Input
-            placeholder="Nhập email"
+            placeholder={t('user.userEmailPlaceholder', 'Nhập email')}
             value={searchEmail}
             onChange={(e) => setSearchEmail(e.target.value)}
             style={{ width: 250 }}
@@ -174,20 +176,20 @@ const ViewUser = (props) => {
             icon={<SearchOutlined />}
             onClick={handleSearch}
           >
-            Tìm kiếm
+            {t('common.search', 'Tìm kiếm')}
           </Button>
           <Button
             loading={loading}
             onClick={handleReset}
             icon={<UndoOutlined />}
           >
-            Làm lại
+            {t('common.reset', 'Làm lại')}
           </Button>
         </Space>
       </Card>
       {/* TABLE */}
       <Card
-        title="Danh sách Users"
+        title={t('user.listTitle', 'Danh sách Users')}
         extra={
           <Space>
             <Button
@@ -195,7 +197,7 @@ const ViewUser = (props) => {
               icon={<PlusOutlined />}
               onClick={() => setIsOpenCreateUser(true)}
             >
-              Thêm mới
+              {t('common.addNew', 'Thêm mới')}
             </Button>
             <ReloadOutlined onClick={handleReset} />
           </Space>
@@ -241,7 +243,7 @@ const ViewUser = (props) => {
               // Khi người dùng nhấn sang trang p hoặc đổi size thành s
               fetchUsers({ page: p, size: s });
             },
-            locale: { items_per_page: "/ trang" },
+            locale: { items_per_page: t('common.perPage', '/ trang') },
           }}
         />
       </Card>

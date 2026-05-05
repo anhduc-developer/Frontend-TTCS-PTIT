@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Row,
   Col,
@@ -12,6 +13,7 @@ import {
   Divider,
   Input,
   Slider,
+  Button,
 } from "antd";
 import {
   EnvironmentOutlined,
@@ -25,10 +27,12 @@ import { fetchAllJobs } from "../../../services/api.service";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/vi";
+import "dayjs/locale/en-gb"; // Import thêm locale tiếng Anh cho dayjs
 
 const { Title, Text } = Typography;
 
 const JobPage = () => {
+  const { t, i18n } = useTranslation();
   const [jobsData, setJobsData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,18 +45,18 @@ const JobPage = () => {
   const [salaryRange, setSalaryRange] = useState([0, 100000000]);
 
   const navigate = useNavigate();
-  dayjs.extend(relativeTime);
-  dayjs.locale("vi");
 
-  // Hàm fetch data từ Server có tham số lọc và phân trang
+  // Cấu hình dayjs theo ngôn ngữ hiện tại
+  dayjs.extend(relativeTime);
+  useEffect(() => {
+    dayjs.locale(i18n.language === "vi" ? "vi" : "en-gb");
+  }, [i18n.language]);
+
   const loadJobs = async () => {
     setIsLoading(true);
-
-    // 🔥 CẬP NHẬT: Thêm điều kiện status='APPROVED' và active=true
     let filter = `active=true AND status='APPROVED'`;
 
     if (searchQuery) {
-      // Lưu ý bọc các điều kiện tìm kiếm trong ngoặc đơn để không làm sai lệch điều kiện status/active
       filter += ` AND (name~'${searchQuery}' OR company.name~'${searchQuery}' OR skills.name~'${searchQuery}')`;
     }
 
@@ -73,22 +77,19 @@ const JobPage = () => {
     setIsLoading(false);
   };
 
-  // Gọi lại API khi trang hoặc tiêu chí lọc thay đổi
   useEffect(() => {
     loadJobs();
   }, [currentPage, pageSize]);
 
-  // Handler khi nhấn nút tìm kiếm hoặc thay đổi slider
-  // Lưu ý: Thêm nút bấm hoặc debounce để tránh gọi API quá nhiều khi gõ/kéo
   const handleFilterTrigger = () => {
-    setCurrentPage(1); // Reset về trang 1 khi lọc
+    setCurrentPage(1);
     loadJobs();
   };
 
   if (isLoading && jobsData.length === 0) {
     return (
       <div style={{ padding: 100, textAlign: "center" }}>
-        <Spin size="large" tip="Đang tải danh sách việc làm..." />
+        <Spin size="large" tip={t("message.loading")} />
       </div>
     );
   }
@@ -110,22 +111,22 @@ const JobPage = () => {
           <Row gutter={[32, 24]} align="middle">
             <Col xs={24} md={12}>
               <Text strong>
-                <SearchOutlined /> Tìm kiếm công việc
+                <SearchOutlined /> {t("home.searchJob")}
               </Text>
               <Input
-                placeholder="Vị trí, công ty hoặc kỹ năng..."
+                placeholder={t("home.searchPlaceholder")}
                 allowClear
                 size="large"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onPressEnter={handleFilterTrigger} // Nhấn Enter để tìm
+                onPressEnter={handleFilterTrigger}
                 style={{ marginTop: 10, borderRadius: 8 }}
               />
             </Col>
             <Col xs={24} md={10}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <Text strong>
-                  <FilterOutlined /> Mức lương (VNĐ)
+                  <FilterOutlined /> {t("home.salary")} (VNĐ)
                 </Text>
                 <Text type="danger" strong>
                   {salaryRange[0].toLocaleString()} -{" "}
@@ -139,25 +140,23 @@ const JobPage = () => {
                 max={100000000}
                 value={salaryRange}
                 onChange={(val) => setSalaryRange(val)}
-                onAfterChange={handleFilterTrigger} // Thả chuột ra mới gọi API
+                onAfterChange={handleFilterTrigger}
                 style={{ marginTop: 15 }}
               />
             </Col>
             <Col xs={24} md={2}>
-              <button
+              <Button
+                type="primary"
                 onClick={handleFilterTrigger}
                 style={{
                   width: "100%",
                   height: 40,
-                  cursor: "pointer",
                   borderRadius: 8,
-                  border: "none",
-                  background: "#1890ff",
-                  color: "#fff",
+                  fontWeight: 600,
                 }}
               >
-                Lọc
-              </button>
+                {t("common.filter")}
+              </Button>
             </Col>
           </Row>
         </Card>
@@ -197,7 +196,7 @@ const JobPage = () => {
                             zIndex: 1,
                           }}
                         >
-                          HOT
+                          {t("common.hot")}
                         </Tag>
                       )}
 
@@ -294,13 +293,18 @@ const JobPage = () => {
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                   showSizeChanger
+                  showTotal={(total, range) =>
+                    t("common.paginationText", {
+                      start: range[0],
+                      end: range[1],
+                      total,
+                    })
+                  }
                 />
               </div>
             </>
           ) : (
-            <Empty
-              description={<span>Không tìm thấy công việc phù hợp</span>}
-            />
+            <Empty description={<span>{t("job.noJobsFound")}</span>} />
           )}
         </Spin>
       </div>

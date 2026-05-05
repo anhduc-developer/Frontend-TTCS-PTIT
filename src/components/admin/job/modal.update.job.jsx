@@ -10,11 +10,16 @@ import {
   Select,
   Switch,
 } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react"; // Thêm useContext
+import { useTranslation } from "react-i18next";
 import ReactQuill from "react-quill-new";
 import dayjs from "dayjs";
 import { callPutJob } from "../../../services/api.service";
+import { AuthContext } from "../../context/auth.context"; // Import AuthContext
+
 const UpdateJob = (props) => {
+  const { t } = useTranslation();
+  const { user } = useContext(AuthContext); // Lấy thông tin user để check role
   const {
     isOpenUpdateJob,
     setIsOpenUpdateJob,
@@ -24,99 +29,104 @@ const UpdateJob = (props) => {
     skillData,
   } = props;
 
-  // 1. CHUYỂN DESCRIPTION LÊN ĐẦU
-  const [description, setDescription] = useState("");
-
-  // XÓA ĐOẠN cleanDescription Ở ĐÂY (VÌ NÓ GÂY LỖI TRUY CẬP TRƯỚC KHI KHỞI TẠO)
-
-  const skillIds = dataUpdateJob.skills?.map((skill) => skill.id) || [];
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+
+  // Kiểm tra quyền HR
+  const isHR = user?.role?.name === "HR";
 
   const handleCancel = () => {
     setIsOpenUpdateJob(false);
-    form.resetFields(); // Nên thêm để reset form
+    form.resetFields();
   };
 
   useEffect(() => {
     if (dataUpdateJob && isOpenUpdateJob) {
       form.setFieldsValue({
         ...dataUpdateJob,
-        skills: skillIds,
+        skills: dataUpdateJob.skills?.map((s) => s.id),
+        companyId: dataUpdateJob.company?.id,
         startDate: dataUpdateJob.startDate
           ? dayjs(dataUpdateJob.startDate)
           : null,
         endDate: dataUpdateJob.endDate ? dayjs(dataUpdateJob.endDate) : null,
-        companyId: dataUpdateJob.company?.id,
+        status: dataUpdateJob.status,
+        description: dataUpdateJob.description || "",
       });
-
-      setDescription(dataUpdateJob.description || "");
     }
-  }, [dataUpdateJob, isOpenUpdateJob]);
+  }, [dataUpdateJob, isOpenUpdateJob, form]);
 
   const onFinish = async (values) => {
-    // 2. CHỈ XỬ LÝ CLEAN TẠI ĐÂY KHI BẤM SUBMIT
-    const cleanDescription = description
-      ? description.replace(/&nbsp;/g, " ")
-      : "";
-    const data = {
-      id: dataUpdateJob.id,
-      name: values.name,
-      skills: values.skills.map((id) => ({ id })),
-      location: values.location,
-      salary: +values.salary,
-      quantity: +values.quantity,
-      level: values.level,
-      company: { id: values.companyId },
-      startDate: values.startDate,
-      endDate: values.endDate,
-      active: values.active,
-      description: cleanDescription, // Gửi bản đã dọn dẹp
-      hot: values.hot,
-    };
-
-    console.log(">>> Data gửi đi:", data);
-
-    const res = await callPutJob(data);
-    if (res.data) {
-      notification.success({
-        title: "Update Job Success!",
-        description: "Cập nhật job thành công",
-      });
-      setIsOpenUpdateJob(false);
-      fetchJobs();
-    } else {
+    setLoading(true);
+    try {
+      const data = {
+        id: dataUpdateJob.id,
+        name: values.name,
+        skills: values.skills.map((id) => ({ id })),
+        location: values.location,
+        salary: +values.salary,
+        quantity: +values.quantity,
+        level: values.level,
+        company: { id: values.companyId },
+        startDate: values.startDate?.toISOString(),
+        endDate: values.endDate?.toISOString(),
+        active: values.active,
+        hot: values.hot,
+        description: values.description?.replace(/&nbsp;/g, " "),
+        status: isHR ? "PENDING_APPROVAL" : values.status,
+      };
+      const res = await callPutJob(data);
+      if (res.data) {
+        notification.success({
+          message: t("job.updateSuccess"),
+        });
+        setIsOpenUpdateJob(false);
+        fetchJobs();
+        form.resetFields();
+      } else {
+        notification.error({
+          message: t("job.updateError"),
+          description: res.message,
+        });
+      }
+    } catch (error) {
       notification.error({
-        message: "Update Job Failed",
-        description: JSON.stringify(res.message),
+        message: t("job.updateError"),
+        description: error.message,
       });
     }
+    setLoading(false);
   };
   return (
     <Modal
-      title="Tạo mới Job"
+      title={t("job.updateTitle")}
       open={isOpenUpdateJob}
       onCancel={handleCancel}
       width={1000}
       onOk={() => form.submit()}
+      confirmLoading={loading}
     >
       <Form form={form} layout="vertical" onFinish={onFinish}>
         {/* ROW 1 */}
         <Row gutter={16}>
           <Col span={10}>
-            <Form.Item label="Tên Job" name="name" rules={[{ required: true }]}>
-              <Input placeholder="Nhập tên job" />
+            <Form.Item
+              label={t("job.jobName")}
+              name="name"
+              rules={[{ required: true, message: t("validation.required") }]}
+            >
+              <Input placeholder={t("job.jobNamePlaceholder")} />
             </Form.Item>
           </Col>
 
           <Col span={8}>
             <Form.Item
-              label="Kỹ năng yêu cầu"
+              label={t("job.requiredSkills")}
               name="skills"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
                 mode="multiple"
-                placeholder="Please select a skill"
                 options={skillData.map((item) => ({
                   label: item.name,
                   value: item.id,
@@ -127,16 +137,15 @@ const UpdateJob = (props) => {
 
           <Col span={6}>
             <Form.Item
-              label="Địa điểm"
+              label={t("job.location")}
               name="location"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
-                placeholder="Chọn địa điểm"
                 options={[
-                  { label: "Hà Nội", value: "HN" },
-                  { label: "Hồ Chí Minh", value: "HCM" },
-                  { label: "Đà Nẵng", value: "DN" },
+                  { label: t("job.locationHN"), value: "HN" },
+                  { label: t("job.locationHCM"), value: "HCM" },
+                  { label: t("job.locationDN"), value: "DN" },
                 ]}
               />
             </Form.Item>
@@ -147,45 +156,37 @@ const UpdateJob = (props) => {
         <Row gutter={16}>
           <Col span={10}>
             <Form.Item
-              label="Mức lương"
+              label={t("job.salary")}
               name="salary"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
-              <InputNumber
-                style={{ width: "100%" }}
-                placeholder="Nhập lương"
-                addonAfter="đ"
-              />
+              <InputNumber style={{ width: "100%" }} />
             </Form.Item>
           </Col>
 
           <Col span={8}>
             <Form.Item
-              label="Số lượng"
+              label={t("job.quantity")}
               name="quantity"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
-              <InputNumber
-                style={{ width: "100%" }}
-                placeholder="Nhập số lượng"
-              />
+              <InputNumber style={{ width: "100%" }} />
             </Form.Item>
           </Col>
 
           <Col span={6}>
             <Form.Item
-              label="Trình độ"
+              label={t("job.level")}
               name="level"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
-                placeholder="Please select a level"
                 options={[
-                  { label: "Intern", value: "INTERN" },
-                  { label: "Junior", value: "JUNIOR" },
-                  { label: "Senior", value: "SENIOR" },
-                  { label: "Fresher", value: "FRESHER" },
-                  { label: "Middle", value: "MIDDLE" },
+                  { label: t("job.levelIntern"), value: "INTERN" },
+                  { label: t("job.levelJunior"), value: "JUNIOR" },
+                  { label: t("job.levelSenior"), value: "SENIOR" },
+                  { label: t("job.levelFresher"), value: "FRESHER" },
+                  { label: t("job.levelMiddle"), value: "MIDDLE" },
                 ]}
               />
             </Form.Item>
@@ -193,16 +194,14 @@ const UpdateJob = (props) => {
         </Row>
 
         {/* ROW 3 */}
-        {/* ROW 3 */}
         <Row gutter={16}>
           <Col span={6}>
             <Form.Item
-              label="Thuộc Công Ty"
+              label={t("job.company")}
               name="companyId"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
-                placeholder="Chọn công ty"
                 options={companyData.map((item) => ({
                   label: item.name,
                   value: item.id,
@@ -213,9 +212,9 @@ const UpdateJob = (props) => {
 
           <Col span={5}>
             <Form.Item
-              label="Ngày bắt đầu"
+              label={t("job.startDate")}
               name="startDate"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <DatePicker style={{ width: "100%" }} />
             </Form.Item>
@@ -223,54 +222,70 @@ const UpdateJob = (props) => {
 
           <Col span={5}>
             <Form.Item
-              label="Ngày kết thúc"
+              label={t("job.endDate")}
               name="endDate"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <DatePicker style={{ width: "100%" }} />
             </Form.Item>
           </Col>
 
-          {/* Nút Trạng thái Active */}
-          <Col span={4}>
+          {/* CHỈ ADMIN MỚI THẤY FIELD STATUS ĐỂ SỬA */}
+          {!isHR && (
+            <Col span={4}>
+              <Form.Item
+                label={t("job.status")}
+                name="status"
+                rules={[{ required: true }]}
+              >
+                <Select
+                  placeholder={t("common.selectPlaceholder")}
+                  options={[
+                    {
+                      label: t("job.statusPendingPayment"),
+                      value: "PENDING_PAYMENT",
+                    },
+                    {
+                      label: t("job.statusPendingApproval"),
+                      value: "PENDING_APPROVAL",
+                    },
+                    { label: t("job.statusApproved"), value: "APPROVED" },
+                    { label: t("job.statusRejected"), value: "REJECTED" },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+          )}
+
+          <Col span={2}>
             <Form.Item
-              label="Trạng thái"
+              label={t("job.active")}
               name="active"
               valuePropName="checked"
-              initialValue={true}
             >
-              <Switch checkedChildren="ACTIVE" unCheckedChildren="INACTIVE" />
+              <Switch />
             </Form.Item>
           </Col>
 
-          {/* MỚI: Nút Bật/Tắt HOT */}
-          <Col span={4}>
-            <Form.Item
-              label="Tin Hot"
-              name="hot"
-              valuePropName="checked"
-              initialValue={false}
-            >
-              <Switch
-                checkedChildren="HOT"
-                unCheckedChildren="NORMAL"
-                style={{
-                  backgroundColor: form.getFieldValue("hot") ? "#ff4d4f" : "",
-                }} // Tùy chọn: Đổi màu đỏ khi bật
-              />
+          <Col span={2}>
+            <Form.Item label={t("job.hot")} name="hot" valuePropName="checked">
+              <Switch />
             </Form.Item>
           </Col>
         </Row>
-        <Form.Item label="Miêu tả">
-          <ReactQuill
-            theme="snow"
-            value={description}
-            onChange={setDescription}
-            style={{ height: "300px", marginBottom: "50px" }}
-          />
+
+        {/* DESCRIPTION */}
+        <Form.Item
+          label={t("job.description")}
+          name="description"
+          valuePropName="value"
+          getValueFromEvent={(content) => content}
+        >
+          <ReactQuill theme="snow" style={{ height: 250, marginBottom: 50 }} />
         </Form.Item>
       </Form>
     </Modal>
   );
 };
+
 export default UpdateJob;

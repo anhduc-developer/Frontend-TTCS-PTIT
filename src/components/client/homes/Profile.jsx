@@ -22,7 +22,6 @@ import {
   UserOutlined,
   LockOutlined,
   HistoryOutlined,
-  SafetyCertificateOutlined,
   ArrowRightOutlined,
   MailOutlined,
   HomeOutlined,
@@ -30,6 +29,7 @@ import {
   WomanOutlined,
   CalendarOutlined,
   EditOutlined,
+  GlobalOutlined,
 } from "@ant-design/icons";
 import { AuthContext } from "../../context/auth.context";
 import {
@@ -39,15 +39,18 @@ import {
 } from "../../../services/api.service";
 import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const Profile = () => {
+  const { t, i18n } = useTranslation();
   const { user, setUser, setIsAuthenticated } = useContext(AuthContext);
   const [currentMenu, setCurrentMenu] = useState("info");
   const [listResume, setListResume] = useState([]);
   const navigate = useNavigate();
+
   // States điều khiển
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -57,35 +60,37 @@ const Profile = () => {
   const [current, setCurrent] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+
   // Tự động fetch Resume khi chuyển sang tab lịch sử
   const fetchResumes = async () => {
     const res = await callFetchResumeByUser();
     if (res && res.data) {
-      // Kết quả trả về từ ResultPaginationDTO (thường là res.data.result)
       setListResume(res.data.result || []);
+      setTotal(res.data.meta.total || 0);
     }
   };
+
   useEffect(() => {
     if (currentMenu === "history") {
       fetchResumes();
     }
   }, [currentMenu]);
 
-  // Hàm xử lý đổi mật khẩu
+  // Hàm thay đổi ngôn ngữ
+  const handleChangeLanguage = (value) => {
+    i18n.changeLanguage(value);
+    message.info(
+      t("header.language") + ": " + (value === "vi" ? "Tiếng Việt" : "English"),
+    );
+  };
+
   const handleChangePassword = async (values) => {
     const { oldPassword, newPassword } = values;
     const res = await callChangePassword(oldPassword, newPassword);
 
-    // Kiểm tra statusCode 200 từ RestResponse của Backend
     if (res && (res.statusCode === 200 || res.data?.statusCode === 200)) {
-      message.success("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
-
-      // --- LOGIC ĐĂNG XUẤT ---
-      // 1. Xóa token khỏi localStorage
+      message.success(t("profile.changePasswordSuccess"));
       localStorage.removeItem("access_token");
-
-      // 2. Reset lại Context (Quan trọng để các component khác như Header cập nhật)
       setUser({
         id: "",
         email: "",
@@ -97,18 +102,15 @@ const Profile = () => {
         permissions: [],
       });
       setIsAuthenticated(false);
-
-      // 3. Đẩy người dùng về trang Login
       navigate("/login");
     } else {
       notification.error({
-        message: "Đổi mật khẩu thất bại",
-        description: res.message || "Mật khẩu cũ không chính xác",
+        message: t("profile.incorrectPassword"),
+        description: res.message || t("error.errorOccurred"),
       });
     }
   };
 
-  // Hàm xử lý cập nhật thông tin cá nhân
   const handleUpdateInfo = async (values) => {
     setIsUpdating(true);
     const data = {
@@ -121,18 +123,12 @@ const Profile = () => {
     const res = await callUpdateUserInfo(data);
 
     if (res && res.data) {
-      message.success("Cập nhật thông tin thành công!");
-      setUser({
-        ...user,
-        name: values.name,
-        age: values.age,
-        gender: values.gender,
-        address: values.address,
-      });
+      message.success(t("profile.updateSuccess"));
+      setUser({ ...user, ...data });
       setIsModalOpen(false);
     } else {
       notification.error({
-        message: "Có lỗi xảy ra",
+        message: t("message.error"),
         description: res.message,
       });
     }
@@ -148,30 +144,31 @@ const Profile = () => {
       address: user?.address,
     });
   };
-  const onChangePagination = (page, size) => {
-    setCurrent(page);
-    setPageSize(size);
-  };
+
   const renderGender = (gender) => {
     if (gender === "MALE")
       return (
         <Tag color="blue" icon={<ManOutlined />}>
-          Nam
+          {t("user.genderMale")}
         </Tag>
       );
     if (gender === "FEMALE")
       return (
         <Tag color="pink" icon={<WomanOutlined />}>
-          Nữ
+          {t("user.genderFemale")}
         </Tag>
       );
-    return <Tag color="default">Khác</Tag>;
+    return <Tag color="default">{t("user.genderOther")}</Tag>;
   };
 
   const menuItems = [
-    { id: "info", label: "Thông tin cá nhân", icon: <UserOutlined /> },
-    { id: "history", label: "Lịch sử ứng tuyển", icon: <HistoryOutlined /> },
-    { id: "password", label: "Đổi mật khẩu", icon: <LockOutlined /> },
+    { id: "info", label: t("user.personalInfo"), icon: <UserOutlined /> },
+    { id: "history", label: t("profile.history"), icon: <HistoryOutlined /> },
+    {
+      id: "password",
+      label: t("profile.changePasswordTitle"),
+      icon: <LockOutlined />,
+    },
   ];
 
   return (
@@ -215,17 +212,17 @@ const Profile = () => {
             />
             <div style={{ marginBottom: 15 }}>
               <Title level={2} style={{ margin: 0 }}>
-                {user?.name || "Chưa cập nhật"}
+                {user?.name || t("profile.notUpdated")}
               </Title>
               <Text type="secondary" style={{ fontSize: 16 }}>
                 {user?.email}
               </Text>
             </div>
           </div>
+          {/* Language Switcher */}
         </div>
 
         <Row gutter={[24, 24]}>
-          {/* Sidebar Menu */}
           <Col xs={24} md={7}>
             <Card
               style={{
@@ -261,7 +258,6 @@ const Profile = () => {
             </Card>
           </Col>
 
-          {/* Main Content */}
           <Col xs={24} md={17}>
             <Card
               style={{
@@ -281,7 +277,7 @@ const Profile = () => {
                     }}
                   >
                     <Title level={4}>
-                      <UserOutlined /> Hồ sơ cá nhân
+                      <UserOutlined /> {t("user.userInfo")}
                     </Title>
                     <Button
                       type="primary"
@@ -289,7 +285,7 @@ const Profile = () => {
                       icon={<EditOutlined />}
                       onClick={showModal}
                     >
-                      Chỉnh sửa
+                      {t("common.edit")}
                     </Button>
                   </div>
                   <Divider />
@@ -297,7 +293,7 @@ const Profile = () => {
                     <Col span={12} xs={24} sm={12}>
                       <Space direction="vertical" size={0}>
                         <Text type="secondary">
-                          <UserOutlined /> Họ và tên
+                          <UserOutlined /> {t("user.userName")}
                         </Text>
                         <Text strong style={{ fontSize: 16 }}>
                           {user?.name || "N/A"}
@@ -307,7 +303,7 @@ const Profile = () => {
                     <Col span={12} xs={24} sm={12}>
                       <Space direction="vertical" size={0}>
                         <Text type="secondary">
-                          <MailOutlined /> Email tài khoản
+                          <MailOutlined /> {t("user.userEmail")}
                         </Text>
                         <Text strong style={{ fontSize: 16 }}>
                           {user?.email}
@@ -317,16 +313,18 @@ const Profile = () => {
                     <Col span={12} xs={24} sm={12}>
                       <Space direction="vertical" size={0}>
                         <Text type="secondary">
-                          <CalendarOutlined /> Độ tuổi
+                          <CalendarOutlined /> {t("user.userAge")}
                         </Text>
                         <Text strong style={{ fontSize: 16 }}>
-                          {user?.age ? `${user.age} tuổi` : "Chưa cập nhật"}
+                          {user?.age
+                            ? t("profile.age_years", { age: user.age })
+                            : t("profile.notUpdated")}
                         </Text>
                       </Space>
                     </Col>
                     <Col span={12} xs={24} sm={12}>
                       <Space direction="vertical" size={0}>
-                        <Text type="secondary">Giới tính</Text>
+                        <Text type="secondary">{t("user.userGender")}</Text>
                         <div style={{ marginTop: 4 }}>
                           {renderGender(user?.gender)}
                         </div>
@@ -335,19 +333,11 @@ const Profile = () => {
                     <Col span={24}>
                       <Space direction="vertical" size={0}>
                         <Text type="secondary">
-                          <HomeOutlined /> Địa chỉ
+                          <HomeOutlined /> {t("user.userAddress")}
                         </Text>
                         <Text strong style={{ fontSize: 16 }}>
-                          {user?.address || "Chưa cập nhật"}
+                          {user?.address || t("profile.notUpdated")}
                         </Text>
-                      </Space>
-                    </Col>
-                    <Col span={12}>
-                      <Space direction="vertical" size={0}>
-                        <Text type="secondary">Vai trò</Text>
-                        <div style={{ marginTop: 4 }}>
-                          <Tag color="purple">{user?.role?.name}</Tag>
-                        </div>
                       </Space>
                     </Col>
                   </Row>
@@ -357,7 +347,7 @@ const Profile = () => {
               {currentMenu === "history" && (
                 <>
                   <Title level={4}>
-                    <HistoryOutlined /> Lịch sử ứng tuyển
+                    <HistoryOutlined /> {t("profile.history")}
                   </Title>
                   <Divider />
                   <Table
@@ -367,16 +357,23 @@ const Profile = () => {
                       total: total,
                       showSizeChanger: true,
                       pageSizeOptions: ["5", "10", "20"],
+                      onChange: (page, size) => {
+                        setCurrent(page);
+                        setPageSize(size);
+                      },
                       showTotal: (total, range) =>
-                        `${range[0]}-${range[1]} trên ${total} kết quả`,
-                      onChange: (page, size) => onChangePagination(page, size),
+                        t("resume.paginationText", {
+                          start: range[0],
+                          end: range[1],
+                          total,
+                        }),
                     }}
                     dataSource={listResume}
-                    rowKey="id" // Dùng id làm key cho mỗi dòng
+                    rowKey="id"
                     columns={[
                       {
-                        title: "Vị trí",
-                        dataIndex: ["job", "name"], // Truy cập sâu vào job.name
+                        title: t("profile.job"),
+                        dataIndex: ["job", "name"],
                         key: "jobName",
                         render: (text) => (
                           <Text strong style={{ color: "#722ed1" }}>
@@ -385,13 +382,12 @@ const Profile = () => {
                         ),
                       },
                       {
-                        title: "Công ty",
-                        dataIndex: "companyName", // Dùng trực tiếp trường companyName từ object resume
+                        title: t("profile.company"),
+                        dataIndex: "companyName",
                         key: "companyName",
-                        render: (text) => <Text>{text || "N/A"}</Text>,
                       },
                       {
-                        title: "Trạng thái",
+                        title: t("profile.status"),
                         dataIndex: "status",
                         key: "status",
                         render: (status) => {
@@ -402,27 +398,25 @@ const Profile = () => {
                         },
                       },
                       {
-                        title: "Ngày nộp",
+                        title: t("profile.applyDate"),
                         dataIndex: "createdAt",
                         key: "createdAt",
                         render: (date) =>
                           date ? dayjs(date).format("DD/MM/YYYY HH:mm") : "N/A",
                       },
                       {
-                        title: "CV của tôi",
+                        title: t("profile.cv"),
                         dataIndex: "url",
                         key: "url",
-                        render: (_, record) => {
-                          return (
-                            <a
-                              href={`http://localhost:8080/api/v1/files?fileName=${record.url}&folder=resume`}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Xem File
-                            </a>
-                          );
-                        },
+                        render: (url) => (
+                          <a
+                            href={`http://localhost:8080/api/v1/files?fileName=${url}&folder=resume`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {t("common.detail")}
+                          </a>
+                        ),
                       },
                     ]}
                   />
@@ -432,7 +426,7 @@ const Profile = () => {
               {currentMenu === "password" && (
                 <div style={{ maxWidth: 450, padding: "10px" }}>
                   <Title level={4}>
-                    <LockOutlined /> Đổi mật khẩu
+                    <LockOutlined /> {t("profile.changePasswordTitle")}
                   </Title>
                   <Divider />
                   <Form
@@ -441,36 +435,39 @@ const Profile = () => {
                     onFinish={handleChangePassword}
                   >
                     <Form.Item
-                      label="Mật khẩu hiện tại"
+                      label={t("form.oldPassword")}
                       name="oldPassword"
                       rules={[
                         {
                           required: true,
-                          message: "Vui lòng nhập mật khẩu cũ!",
+                          message: t("validation.pleaseEnterOldPassword"),
                         },
                       ]}
                     >
                       <Input.Password />
                     </Form.Item>
                     <Form.Item
-                      label="Mật khẩu mới"
+                      label={t("form.newPassword")}
                       name="newPassword"
                       rules={[
                         {
                           required: true,
                           min: 6,
-                          message: "Tối thiểu 6 ký tự!",
+                          message: t("validation.minLength", { min: 6 }),
                         },
                       ]}
                     >
                       <Input.Password />
                     </Form.Item>
                     <Form.Item
-                      label="Xác nhận"
+                      label={t("form.confirmPassword")}
                       name="confirm"
                       dependencies={["newPassword"]}
                       rules={[
-                        { required: true, message: "Vui lòng xác nhận!" },
+                        {
+                          required: true,
+                          message: t("validation.pleaseConfirm"),
+                        },
                         ({ getFieldValue }) => ({
                           validator(_, value) {
                             if (
@@ -479,7 +476,7 @@ const Profile = () => {
                             )
                               return Promise.resolve();
                             return Promise.reject(
-                              new Error("Mật khẩu không khớp!"),
+                              new Error(t("validation.passwordMismatch")),
                             );
                           },
                         }),
@@ -501,7 +498,7 @@ const Profile = () => {
                         fontWeight: 600,
                       }}
                     >
-                      Cập nhật mật khẩu
+                      {t("profile.updatePasswordButton")}
                     </Button>
                   </Form>
                 </div>
@@ -512,39 +509,41 @@ const Profile = () => {
       </div>
 
       <Modal
-        title="Chỉnh sửa thông tin cá nhân"
+        title={t("user.personalInfo")}
         open={isModalOpen}
         onOk={() => formInfo.submit()}
         onCancel={() => setIsModalOpen(false)}
         confirmLoading={isUpdating}
-        okText="Lưu thông tin"
-        cancelText="Hủy"
+        okText={t("form.submitButton")}
+        cancelText={t("form.cancelButton")}
       >
         <Form form={formInfo} layout="vertical" onFinish={handleUpdateInfo}>
           <Form.Item
-            label="Họ và tên"
+            label={t("user.userName")}
             name="name"
-            rules={[{ required: true, message: "Vui lòng nhập tên!" }]}
+            rules={[
+              { required: true, message: t("validation.pleaseEnterName") },
+            ]}
           >
             <Input />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Tuổi" name="age">
+              <Form.Item label={t("user.userAge")} name="age">
                 <InputNumber style={{ width: "100%" }} min={1} max={120} />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Giới tính" name="gender">
+              <Form.Item label={t("user.userGender")} name="gender">
                 <Select>
-                  <Option value="MALE">Nam</Option>
-                  <Option value="FEMALE">Nữ</Option>
-                  <Option value="OTHER">Khác</Option>
+                  <Option value="MALE">{t("user.genderMale")}</Option>
+                  <Option value="FEMALE">{t("user.genderFemale")}</Option>
+                  <Option value="OTHER">{t("user.genderOther")}</Option>
                 </Select>
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item label="Địa chỉ" name="address">
+          <Form.Item label={t("user.userAddress")} name="address">
             <Input.TextArea rows={3} />
           </Form.Item>
         </Form>

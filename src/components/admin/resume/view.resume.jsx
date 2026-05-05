@@ -21,11 +21,13 @@ import {
 import { useState, useContext } from "react";
 import { callDeleteResume } from "../../../services/api.service";
 import UpdateResume from "./modal.update.resume";
-import { AuthContext } from "../../context/auth.context"; // Đảm bảo đúng đường dẫn
+import { AuthContext } from "../../context/auth.context";
 import { hasPermission } from "../../../services/helper/permission";
+import { useTranslation } from "react-i18next";
 import dayjs from "dayjs";
 
 const ViewResume = (props) => {
+  const { t } = useTranslation();
   const { dataResumes, page, size, total, fetchResumes, loading } = props;
   const { user } = useContext(AuthContext); // Lấy thông tin user từ context
 
@@ -76,21 +78,21 @@ const ViewResume = (props) => {
 
   const columns = [
     {
-      title: "STT",
+      title: t("common.stt"),
       width: 70,
       align: "center",
       render: (_, __, index) => (page - 1) * size + index + 1,
     },
     {
-      title: "Trạng thái",
+      title: t("resume.status"),
       dataIndex: "status",
       width: 130,
       render: (status) => {
         const configs = {
-          PENDING: { color: "warning", label: "CHỜ DUYỆT" },
-          REVIEWING: { color: "blue", label: "ĐANG XEM" },
-          APPROVED: { color: "success", label: "CHẤP NHẬN" },
-          REJECTED: { color: "error", label: "TỪ CHỐI" },
+          PENDING: { color: "warning", label: t("resume.statusPending") },
+          REVIEWING: { color: "blue", label: t("resume.statusReviewing") },
+          APPROVED: { color: "success", label: t("resume.statusApproved") },
+          REJECTED: { color: "error", label: t("resume.statusRejected") },
         };
         const config = configs[status] || { color: "default", label: status };
         return (
@@ -101,24 +103,24 @@ const ViewResume = (props) => {
       },
     },
     {
-      title: "Ứng viên (Email)",
+      title: t("resume.applicantEmail"),
       dataIndex: "email",
     },
     {
-      title: "Công việc",
+      title: t("header.job"),
       render: (_, record) => record?.job?.name || "-",
     },
     {
-      title: "Công ty",
+      title: t("header.company"),
       render: (_, record) => record?.job?.company?.name || "-",
     },
     {
-      title: "Ngày nộp",
+      title: t("resume.submissionDate"),
       dataIndex: "createdAt",
       render: (t) => (t ? dayjs(t).format("DD/MM/YYYY HH:mm") : "-"),
     },
     {
-      title: "Thao tác",
+      title: t("common.actions"),
       key: "action",
       width: 100,
       align: "center",
@@ -130,7 +132,7 @@ const ViewResume = (props) => {
             method: "PUT",
           }) && (
             <EditOutlined
-              title="Cập nhật trạng thái"
+              title={t("resume.updateStatus")}
               style={{ color: "blue", fontSize: 18, cursor: "pointer" }}
               onClick={() => {
                 setIsOpenResume(true);
@@ -145,11 +147,11 @@ const ViewResume = (props) => {
             method: "DELETE",
           }) && (
             <Popconfirm
-              title="Xóa Resume?"
-              description="Bạn có chắc chắn muốn xóa hồ sơ này không?"
+              title={t("resume.deleteConfirm")}
+              description={t("resume.deleteConfirm")}
               onConfirm={() => handleDeleteResume(record.id)}
-              okText="Xác nhận"
-              cancelText="Hủy"
+              okText={t("common.confirm")}
+              cancelText={t("common.cancel")}
             >
               <DeleteOutlined
                 style={{ color: "red", fontSize: 18, cursor: "pointer" }}
@@ -174,26 +176,30 @@ const ViewResume = (props) => {
       >
         <Row gutter={[24, 16]} align="bottom">
           <Col span={5}>
-            <div style={{ marginBottom: 8, fontWeight: 500 }}>Trạng Thái</div>
+            <div style={{ marginBottom: 8, fontWeight: 500 }}>
+              {t("resume.statusLabel")}
+            </div>
             <Select
-              placeholder="Tất cả trạng thái"
+              placeholder={t("resume.allStatuses")}
               style={{ width: "100%" }}
               allowClear
               options={[
-                { label: "PENDING", value: "PENDING" },
-                { label: "REVIEWING", value: "REVIEWING" },
-                { label: "APPROVED", value: "APPROVED" },
-                { label: "REJECTED", value: "REJECTED" },
+                { label: t("resume.statusPending"), value: "PENDING" },
+                { label: t("resume.statusReviewing"), value: "REVIEWING" },
+                { label: t("resume.statusApproved"), value: "APPROVED" },
+                { label: t("resume.statusRejected"), value: "REJECTED" },
               ]}
               onChange={(value) => setSearchStatus(value)}
               value={searchStatus}
             />
           </Col>
           <Col span={7}>
-            <div style={{ marginBottom: 8, fontWeight: 500 }}>Tên Job</div>
+            <div style={{ marginBottom: 8, fontWeight: 500 }}>
+              {t("resume.jobName")}
+            </div>
             <Input
               prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-              placeholder="Nhập tên công việc..."
+              placeholder={t("resume.jobPlaceholder")}
               allowClear
               onPressEnter={handleSearch}
               onChange={(e) => setSearchJob(e.target.value)}
@@ -201,10 +207,12 @@ const ViewResume = (props) => {
             />
           </Col>
           <Col span={7}>
-            <div style={{ marginBottom: 8, fontWeight: 500 }}>Công ty</div>
+            <div style={{ marginBottom: 8, fontWeight: 500 }}>
+              {t("header.company")}
+            </div>
             <Input
               prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
-              placeholder="Nhập tên công ty..."
+              placeholder={t("resume.companyPlaceholder")}
               allowClear
               onPressEnter={handleSearch}
               value={searchCompany}
@@ -220,21 +228,21 @@ const ViewResume = (props) => {
                 style={{ borderRadius: "6px" }}
                 onClick={handleSearch}
               >
-                Lọc
+                {t("common.filter")}
               </Button>
               <Button
                 icon={<ReloadOutlined />}
                 style={{ borderRadius: "6px" }}
                 onClick={handleReset}
               >
-                Reset
+                {t("common.reset")}
               </Button>
             </Space>
           </Col>
         </Row>
       </Card>
 
-      <Card title="DANH SÁCH HỒ SƠ ỨNG TUYỂN">
+      <Card title={t("resume.listTitle")}>
         <Table
           loading={loading}
           columns={columns}
@@ -248,7 +256,11 @@ const ViewResume = (props) => {
             pageSizeOptions: ["10", "20", "50"],
             onChange: (p, s) => fetchResumes({ page: p, size: s }),
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} trên ${total} hồ sơ`,
+              t("resume.paginationText", {
+                start: range[0],
+                end: range[1],
+                total: total,
+              }),
           }}
         />
         <UpdateResume

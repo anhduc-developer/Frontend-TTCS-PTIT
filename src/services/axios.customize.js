@@ -1,5 +1,6 @@
 import axios from "axios";
 import nProgress from "nprogress";
+import i18n from "../i18n";
 
 // 1. Cấu hình NProgress (Tùy chọn: tắt vòng xoay để trông chuyên nghiệp hơn)
 nProgress.configure({
@@ -16,6 +17,13 @@ instance.interceptors.request.use(
     function (config) {
         // 2. Chạy thanh loading khi bắt đầu gửi request
         nProgress.start();
+
+        // Add current locale to request params for i18n backend support
+        const currentLanguage = i18n.language || 'en';
+        if (!config.params) {
+            config.params = {};
+        }
+        config.params.locale = currentLanguage;
 
         if (
             typeof window !== "undefined" &&

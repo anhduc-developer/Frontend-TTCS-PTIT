@@ -27,6 +27,7 @@ import {
   Tooltip,
 } from "antd";
 import { useState, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import CreateJob from "./modal.create.job";
 import { callDeleteJob, callPutJob } from "../../../services/api.service";
 import UpdateJob from "./modal.update.job";
@@ -35,6 +36,7 @@ import { AuthContext } from "../../context/auth.context";
 const { Text, Title } = Typography;
 
 const ViewJob = (props) => {
+  const { t } = useTranslation();
   const {
     companyData,
     page,
@@ -48,36 +50,27 @@ const ViewJob = (props) => {
 
   const { user } = useContext(AuthContext);
   const [form] = Form.useForm();
-
-  // States quản lý Modal
   const [isOpenCreateJob, setIsOpenCreateJob] = useState(false);
   const [isOpenUpdateJob, setIsOpenUpdateJob] = useState(false);
   const [dataUpdateJob, setDataUpdateJob] = useState({});
-
-  // States cho QR Payment
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [selectedJobForPay, setSelectedJobForPay] = useState(null);
   const [loadingPayment, setLoadingPayment] = useState(false);
-
-  // --- Logic Tìm kiếm ---
   const onFinish = (values) => {
     const { name, companyName, status } = values;
+    console.log("Search values:", values); // Debug log to check form values
     let queryParts = [];
     if (name) queryParts.push(`name~'${name}'`);
     if (companyName) queryParts.push(`company.name~'${companyName}'`);
     if (status) queryParts.push(`status='${status}'`);
 
     const filter = queryParts.join(" AND ");
-    // Khi lọc luôn ép về trang 1 để tránh lỗi phân trang
     fetchJobs({ page: 1, size, ...(filter && { filter }) });
   };
-
   const handleReset = () => {
     form.resetFields();
     fetchJobs({ page: 1, size });
   };
-
-  // --- Logic Thanh toán ---
   const showQRModal = (record) => {
     setSelectedJobForPay(record);
     setIsQRModalOpen(true);
@@ -96,8 +89,8 @@ const ViewJob = (props) => {
     const res = await callPutJob(data);
     if (res.data) {
       notification.success({
-        message: "Thanh toán thành công",
-        description: "Tin đăng đang chờ Admin phê duyệt.",
+        message: t("message.success"),
+        description: t("job.updateSuccess"),
       });
       setIsQRModalOpen(false);
       fetchJobs({ page, size });
@@ -105,13 +98,12 @@ const ViewJob = (props) => {
     setLoadingPayment(false);
   };
 
-  // --- Logic Admin Duyệt tin ---
   const handleApproveJob = (record, newStatus) => {
     const isApprove = newStatus === "APPROVED";
     Modal.confirm({
-      title: isApprove ? "Duyệt tin tuyển dụng" : "Từ chối tin",
-      content: `Xác nhận thay đổi trạng thái Job: ${record.name}?`,
-      okText: "Xác nhận",
+      title: isApprove ? t("job.approve") : t("job.reject"),
+      content: `${t("common.confirm")} ${t("message.updateStatus")}: ${record.name}?`,
+      okText: t("common.confirm"),
       onOk: async () => {
         const data = {
           ...record,
@@ -122,7 +114,7 @@ const ViewJob = (props) => {
         };
         const res = await callPutJob(data);
         if (res.data) {
-          notification.success({ message: "Cập nhật thành công!" });
+          notification.success({ message: t("message.updateSuccess") });
           fetchJobs({ page, size });
         }
       },
@@ -132,51 +124,57 @@ const ViewJob = (props) => {
   const handleDeleteJob = async (record) => {
     const res = await callDeleteJob(record.id);
     if (res.data) {
-      notification.success({ message: "Xóa Job thành công!" });
+      notification.success({ message: t("job.deleteSuccess") });
       fetchJobs({ page, size });
     }
   };
 
   const columns = [
     {
-      title: "STT",
+      title: t("common.stt"),
       width: 60,
       align: "center",
       render: (_, __, index) => (page - 1) * size + index + 1,
     },
     {
-      title: "Tên Job",
+      title: t("job.jobName"),
       dataIndex: "name",
       width: 200,
       ellipsis: true,
       render: (t) => <Text strong>{t}</Text>,
     },
     {
-      title: "Công ty",
+      title: t("common.companyName"),
       render: (_, r) => r?.company?.name || "-",
     },
     {
-      title: "Giá dịch vụ",
+      title: t("common.price"),
       width: 120,
       render: () => <Text type="danger">50.000 đ</Text>,
     },
     {
-      title: "Trạng thái",
+      title: t("common.status"),
       dataIndex: "status",
       width: 150,
       render: (status) => {
         const configs = {
-          PENDING_PAYMENT: { color: "warning", text: "Chờ thanh toán" },
-          PENDING_APPROVAL: { color: "processing", text: "Chờ duyệt" },
-          APPROVED: { color: "success", text: "Đang hiển thị" },
-          REJECTED: { color: "error", text: "Bị từ chối" },
+          PENDING_PAYMENT: {
+            color: "warning",
+            text: t("job.statusPendingPayment"),
+          },
+          PENDING_APPROVAL: {
+            color: "processing",
+            text: t("job.statusPendingApproval"),
+          },
+          APPROVED: { color: "success", text: t("job.statusApproved") },
+          REJECTED: { color: "error", text: t("job.statusRejected") },
         };
         const config = configs[status] || { color: "default", text: status };
         return <Tag color={config.color}>{config.text}</Tag>;
       },
     },
     {
-      title: "Thao tác",
+      title: t("common.actions"),
       key: "action",
       width: 170,
       fixed: "right",
@@ -184,7 +182,7 @@ const ViewJob = (props) => {
       render: (_, record) => (
         <Space size="middle">
           {record.status === "PENDING_PAYMENT" && (
-            <Tooltip title="Thanh toán QR">
+            <Tooltip title={t("job.paymentQR")}>
               <CreditCardOutlined
                 style={{ color: "#faad14", fontSize: 20, cursor: "pointer" }}
                 onClick={() => showQRModal(record)}
@@ -196,12 +194,12 @@ const ViewJob = (props) => {
             record.status === "PENDING_APPROVAL" && (
               <>
                 <CheckCircleOutlined
-                  title="Duyệt"
+                  title={t("job.approve")}
                   style={{ color: "#52c41a", fontSize: 18, cursor: "pointer" }}
                   onClick={() => handleApproveJob(record, "APPROVED")}
                 />
                 <CloseCircleOutlined
-                  title="Từ chối"
+                  title={t("job.reject")}
                   style={{ color: "#ff4d4f", fontSize: 18, cursor: "pointer" }}
                   onClick={() => handleApproveJob(record, "REJECTED")}
                 />
@@ -209,7 +207,7 @@ const ViewJob = (props) => {
             )}
 
           <EditOutlined
-            title="Sửa"
+            title={t("common.edit")}
             style={{ color: "#1890ff", fontSize: 18, cursor: "pointer" }}
             onClick={() => {
               setDataUpdateJob(record);
@@ -218,7 +216,7 @@ const ViewJob = (props) => {
           />
 
           <Popconfirm
-            title="Xác nhận xóa?"
+            title={t("job.deleteConfirm")}
             onConfirm={() => handleDeleteJob(record)}
           >
             <DeleteOutlined
@@ -243,29 +241,35 @@ const ViewJob = (props) => {
         <Form form={form} onFinish={onFinish} layout="vertical">
           <Row gutter={[16, 0]}>
             <Col xs={24} md={7}>
-              <Form.Item name="name" label="Tên công việc">
+              <Form.Item name="name" label={t("job.jobName")}>
                 <Input
-                  placeholder="Tìm theo tên vị trí..."
+                  placeholder={t("job.searchByName")}
                   allowClear
                   prefix={<SearchOutlined />}
                 />
               </Form.Item>
             </Col>
             <Col xs={24} md={7}>
-              <Form.Item name="companyName" label="Công ty">
-                <Input placeholder="Tìm theo tên công ty..." allowClear />
+              <Form.Item name="companyName" label={t("common.companyName")}>
+                <Input placeholder={t("job.searchByCompany")} allowClear />
               </Form.Item>
             </Col>
             <Col xs={24} md={6}>
-              <Form.Item name="status" label="Trạng thái">
+              <Form.Item name="status" label={t("common.status")}>
                 <Select
-                  placeholder="Lọc theo trạng thái"
+                  placeholder={t("job.filterByStatus")}
                   allowClear
                   options={[
-                    { label: "Chờ thanh toán", value: "PENDING_PAYMENT" },
-                    { label: "Chờ duyệt", value: "PENDING_APPROVAL" },
-                    { label: "Đang hiển thị", value: "APPROVED" },
-                    { label: "Bị từ chối", value: "REJECTED" },
+                    {
+                      label: t("job.statusPendingPayment"),
+                      value: "PENDING_PAYMENT",
+                    },
+                    {
+                      label: t("job.statusPendingApproval"),
+                      value: "PENDING_APPROVAL",
+                    },
+                    { label: t("job.statusApproved"), value: "APPROVED" },
+                    { label: t("job.statusRejected"), value: "REJECTED" },
                   ]}
                 />
               </Form.Item>
@@ -281,9 +285,9 @@ const ViewJob = (props) => {
             >
               <Space>
                 <Button type="primary" htmlType="submit">
-                  Lọc
+                  {t("common.filter")}
                 </Button>
-                <Button onClick={handleReset}>Reset</Button>
+                <Button onClick={handleReset}>{t("common.reset")}</Button>
               </Space>
             </Col>
           </Row>
@@ -294,7 +298,7 @@ const ViewJob = (props) => {
       <Card
         title={
           <Title level={4} style={{ margin: 0 }}>
-            Danh sách tin đăng
+            {t("header.allJobs")}
           </Title>
         }
         extra={
@@ -303,7 +307,7 @@ const ViewJob = (props) => {
             icon={<PlusOutlined />}
             onClick={() => setIsOpenCreateJob(true)}
           >
-            Đăng tin mới
+            {t("job.createTitle")}
           </Button>
         }
       >
@@ -316,23 +320,24 @@ const ViewJob = (props) => {
           pagination={{
             current: page,
             pageSize: size,
-            total: total, // 🔥 Đảm bảo tổng số (VD: 12) truyền xuống từ file cha
+            total: total,
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "50"],
             onChange: (p, s) => fetchJobs({ page: p, size: s }),
-            showTotal: (total) => `Tổng cộng ${total} kết quả`,
+            showTotal: (total) =>
+              `${t("common.total")} ${total} ${t("common.results")}`,
           }}
         />
       </Card>
 
       {/* MODAL THANH TOÁN QR */}
       <Modal
-        title="Thanh toán phí dịch vụ"
+        title={t("job.paymentTitle")}
         open={isQRModalOpen}
         onCancel={() => setIsQRModalOpen(false)}
         footer={[
           <Button key="back" onClick={() => setIsQRModalOpen(false)}>
-            Hủy bỏ
+            {t("common.cancel")}
           </Button>,
           <Button
             key="submit"
@@ -340,16 +345,14 @@ const ViewJob = (props) => {
             loading={loadingPayment}
             onClick={handleConfirmPayment}
           >
-            Xác nhận đã chuyển tiền
+            {t("job.confirmPayment")}
           </Button>,
         ]}
         width={400}
         centered
       >
         <div style={{ textAlign: "center" }}>
-          <Text type="secondary">
-            Vui lòng quét mã QR để thanh toán phí đăng tin
-          </Text>
+          <Text type="secondary">{t("job.paymentQRHint")}</Text>
           <div
             style={{
               margin: "20px 0",
@@ -377,11 +380,12 @@ const ViewJob = (props) => {
             }}
           >
             <p style={{ margin: 0 }}>
-              <InfoCircleOutlined /> <b>Nội dung:</b> PAY JOB{" "}
+              <InfoCircleOutlined /> <b>{t("job.paymentContent")}:</b> PAY JOB{" "}
               {selectedJobForPay?.id}
             </p>
             <p style={{ margin: "5px 0 0 0" }}>
-              <InfoCircleOutlined /> <b>Chủ tài khoản:</b> QUAN TRI VIEN
+              <InfoCircleOutlined /> <b>{t("job.accountOwner")}:</b> QUAN TRI
+              VIEN
             </p>
           </div>
         </div>

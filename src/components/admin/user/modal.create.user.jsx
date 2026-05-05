@@ -10,9 +10,11 @@ import {
   Col,
   notification,
 } from "antd";
+import { useTranslation } from "react-i18next";
 import { createUserAPI } from "../../../services/api.service";
 
 const ModalUser = (props) => {
+  const { t } = useTranslation();
   const {
     isOpenCreateUser,
     setIsOpenCreateUser,
@@ -50,8 +52,8 @@ const ModalUser = (props) => {
     const res = await createUserAPI(user);
     if (res.data) {
       notification.success({
-        message: "Create User Success!",
-        description: "Tạo mới người dùng thành công!",
+        message: t('message.success', 'Create User Success!'),
+        description: t('message.createSuccess', 'Tạo mới người dùng thành công!'),
       });
       setIsOpenCreateUser(false);
       form.resetFields();
@@ -62,24 +64,24 @@ const ModalUser = (props) => {
       });
     } else {
       notification.error({
-        message: "Create User Error!",
+        message: t('message.error', 'Create User Error!'),
         description: JSON.stringify(res.message),
       });
     }
   };
   return (
     <Modal
-      title="Tạo mới User"
+      title={t('user.createTitle', 'Tạo mới User')}
       open={isOpenCreateUser}
       onOk={handleOk}
       onCancel={handleCancel}
       width={800}
       footer={[
         <Button type="primary" onClick={() => form.submit()} key="submit">
-          Create
+          {t('common.confirm', 'Create')}
         </Button>,
         <Button onClick={handleCancel} key="back">
-          Cancel
+          {t('common.cancel', 'Cancel')}
         </Button>,
       ]}
     >
@@ -93,20 +95,20 @@ const ModalUser = (props) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="Email"
+              label={t('user.userEmail', 'Email')}
               name="email"
-              rules={[{ required: true, message: "Vui lòng nhập email!" }]}
+              rules={[{ required: true, message: t('validation.pleaseEnterEmail', 'Vui lòng nhập email!') }]}
             >
-              <Input placeholder="Nhập email" />
+              <Input placeholder={t('user.userEmailPlaceholder', 'Nhập email')} />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Password"
+              label={t('user.userPassword', 'Password')}
               name="password"
-              rules={[{ required: true, message: "Vui lòng nhập password!" }]}
+              rules={[{ required: true, message: t('validation.pleaseEnterPassword', 'Vui lòng nhập password!') }]}
             >
-              <Input.Password placeholder="Nhập password" />
+              <Input.Password placeholder={t('user.userPasswordPlaceholder', 'Nhập password')} />
             </Form.Item>
           </Col>
         </Row>
@@ -115,54 +117,54 @@ const ModalUser = (props) => {
         <Row gutter={16}>
           <Col span={6}>
             <Form.Item
-              label="Tên hiển thị"
+              label={t('user.userName', 'Tên hiển thị')}
               name="name"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: t('validation.pleaseEnterName', 'Vui lòng nhập tên!') }]}
             >
-              <Input placeholder="Nhập tên hiển thị" />
+              <Input placeholder={t('user.userNamePlaceholder', 'Nhập tên hiển thị')} />
             </Form.Item>
           </Col>
           <Col span={6}>
             <Form.Item
-              label="Tuổi"
+              label={t('user.userAge', 'Tuổi')}
               name="age"
-              rules={[{ required: true, message: "Vui lòng nhập tuổi" }]}
+              rules={[{ required: true, message: t('validation.pleaseEnterAge', 'Vui lòng nhập tuổi') }]}
             >
               <InputNumber
                 style={{ width: "100%" }}
-                placeholder="Nhập nhập tuổi"
+                placeholder={t('user.userAgePlaceholder', 'Nhập tuổi')}
               />
             </Form.Item>
           </Col>
           <Col span={6}>
             <Form.Item
-              label="Giới Tính"
+              label={t('user.userGender', 'Giới Tính')}
               name="gender"
-              rules={[{ required: true, message: "Vui lòng chọn giới tính" }]}
+              rules={[{ required: true, message: t('validation.pleaseSelectGender', 'Vui lòng chọn giới tính') }]}
             >
               <Select
-                placeholder="Chọn giới tính"
+                placeholder={t('common.selectPlaceholder', 'Chọn giới tính')}
                 options={[
-                  { label: "Nam", value: "MALE" },
-                  { label: "Nữ", value: "FEMALE" },
-                  { label: "Khác", value: "OTHER" },
+                  { label: t('user.genderMale', 'Nam'), value: "MALE" },
+                  { label: t('user.genderFemale', 'Nữ'), value: "FEMALE" },
+                  { label: t('user.genderOther', 'Khác'), value: "OTHER" },
                 ]}
               />
             </Form.Item>
           </Col>
           <Col span={6}>
             <Form.Item
-              label="Vai trò"
+              label={t('user.userRole', 'Vai trò')}
               name="role"
               rules={[
                 {
                   required: true,
-                  message: "Vui lòng chọn vai trò cho người dùng",
+                  message: t('validation.pleaseSelectRole', 'Vui lòng chọn vai trò cho người dùng'),
                 },
               ]}
             >
               <Select
-                placeholder="Chọn vai trò"
+                placeholder={t('common.selectPlaceholder', 'Chọn vai trò')}
                 options={roleData.map((item) => ({
                   label: item.name,
                   value: item.id,
@@ -176,12 +178,12 @@ const ModalUser = (props) => {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="Thuộc Công Ty"
+              label={t('user.company', 'Thuộc Công Ty')}
               name="company"
               rules={[{ required: false }]}
             >
               <Select
-                placeholder="Chọn công ty"
+                placeholder={t('common.selectPlaceholder', 'Chọn công ty')}
                 options={companyData.map((item) => ({
                   label: item.name,
                   value: item.id,
@@ -191,11 +193,11 @@ const ModalUser = (props) => {
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Địa chỉ"
+              label={t('user.userAddress', 'Địa chỉ')}
               name="address"
               rules={[{ required: false }]}
             >
-              <Input placeholder="Nhập địa chỉ" />
+              <Input placeholder={t('user.userAddressPlaceholder', 'Nhập địa chỉ')} />
             </Form.Item>
           </Col>
         </Row>

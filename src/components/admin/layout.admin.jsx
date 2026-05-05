@@ -27,12 +27,15 @@ import {
   message,
 } from "antd";
 import { Outlet, useNavigate, useLocation, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { AuthContext } from "../../components/context/auth.context";
+import LanguageSwitcher from "../LanguageSwitcher";
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
 const AdminLayout = () => {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const { user, setUser, setIsAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -52,7 +55,7 @@ const AdminLayout = () => {
     localStorage.removeItem("access_token");
     setUser({ email: "", fullName: "", role: { id: "", name: "" }, id: "" });
     setIsAuthenticated(false);
-    message.success("Đăng xuất thành công");
+    message.success(t("message.logoutSuccess"));
     navigate("/login");
   };
 
@@ -60,7 +63,7 @@ const AdminLayout = () => {
   const userMenuItems = [
     {
       key: "home",
-      label: <Link to="/">Trang chủ</Link>,
+      label: <Link to="/">{t("header.home")}</Link>,
       icon: <HomeOutlined />,
     },
     {
@@ -68,7 +71,7 @@ const AdminLayout = () => {
     },
     {
       key: "logout",
-      label: "Đăng xuất",
+      label: t("header.logout"),
       icon: <LogoutOutlined />,
       danger: true,
       onClick: handleLogout,
@@ -80,49 +83,49 @@ const AdminLayout = () => {
     {
       key: "/admin",
       icon: <DashboardOutlined />,
-      label: "Dashboard",
+      label: t("header.dashboard"),
       module: "DASHBOARDS",
     },
     {
       key: "/admin/user",
       icon: <UserOutlined />,
-      label: "User",
+      label: t("header.user"),
       module: "USERS",
     },
     {
       key: "/admin/company",
       icon: <BankOutlined />,
-      label: "Company",
+      label: t("header.company"),
       module: "COMPANIES",
     },
     {
       key: "/admin/job",
       icon: <ScheduleOutlined />,
-      label: "Job",
+      label: t("header.job"),
       module: "JOBS",
     },
     {
       key: "/admin/skill",
       icon: <ToolOutlined />,
-      label: "Skill",
+      label: t("header.skill"),
       module: "SKILLS",
     },
     {
       key: "/admin/resume",
       icon: <FileTextOutlined />,
-      label: "Resume",
+      label: t("header.resume"),
       module: "RESUMES",
     },
     {
       key: "/admin/permission",
       icon: <SafetyOutlined />,
-      label: "Permission",
+      label: t("header.permission"),
       module: "PERMISSIONS",
     },
     {
       key: "/admin/role",
       icon: <SolutionOutlined />,
-      label: "Role",
+      label: t("header.role"),
       module: "ROLES",
     },
   ];
@@ -218,20 +221,30 @@ const AdminLayout = () => {
             style={{ fontSize: "16px", width: 64, height: 64 }}
           />
 
-          <Dropdown
-            menu={{ items: userMenuItems }}
-            placement="bottomRight"
-            arrow
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "16px",
+              marginLeft: "auto",
+            }}
           >
-            <Space style={{ cursor: "pointer", padding: "0 8px" }}>
-              <Avatar
-                style={{ backgroundColor: "#1890ff" }}
-                icon={<UserOutlined />}
-              />
-              <Text strong>{user?.name || "Account"}</Text>
-              <DownOutlined style={{ fontSize: 10, color: "#8c8c8c" }} />
-            </Space>
-          </Dropdown>
+            <LanguageSwitcher />
+            <Dropdown
+              menu={{ items: userMenuItems }}
+              placement="bottomRight"
+              arrow
+            >
+              <Space style={{ cursor: "pointer", padding: "0 8px" }}>
+                <Avatar
+                  style={{ backgroundColor: "#1890ff" }}
+                  icon={<UserOutlined />}
+                />
+                <Text strong>{user?.name || "Account"}</Text>
+                <DownOutlined style={{ fontSize: 10, color: "#8c8c8c" }} />
+              </Space>
+            </Dropdown>
+          </div>
         </Header>
 
         <Content

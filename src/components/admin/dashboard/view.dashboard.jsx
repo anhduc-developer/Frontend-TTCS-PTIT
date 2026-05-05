@@ -2,36 +2,38 @@ import React from "react";
 import { Column } from "@ant-design/plots";
 import { hasPermission } from "../../../services/helper/permission";
 import { Empty, Typography } from "antd"; // Import Typography để lấy Title chuẩn
+import { useTranslation } from "react-i18next";
 
 const { Title } = Typography;
 
 const ViewDashboard = ({ dashboardData, user }) => {
+  const { t } = useTranslation();
   // 1. Định nghĩa tất cả các cột thống kê có thể có
   const allStats = [
-    { type: "User", sales: dashboardData?.totalUsers || 0, module: "USERS" },
+    { type: t('header.user', 'User'), sales: dashboardData?.totalUsers || 0, module: "USERS" },
     {
-      type: "Company",
+      type: t('header.company', 'Company'),
       sales: dashboardData?.totalCompanies || 0,
       module: "COMPANIES",
     },
-    { type: "Job", sales: dashboardData?.totalJobs || 0, module: "JOBS" },
+    { type: t('header.job', 'Job'), sales: dashboardData?.totalJobs || 0, module: "JOBS" },
     {
-      type: "Permission",
+      type: t('header.permission', 'Permission'),
       sales: dashboardData?.totalPermissions || 0,
       module: "PERMISSIONS",
     },
-    { type: "Role", sales: dashboardData?.totalRoles || 0, module: "ROLES" },
+    { type: t('header.role', 'Role'), sales: dashboardData?.totalRoles || 0, module: "ROLES" },
     {
-      type: "Resume",
+      type: t('header.resume', 'Resume'),
       sales: dashboardData?.totalResumes || 0,
       module: "RESUMES",
     },
     {
-      type: "Subscriber",
+      type: t('header.subscriber', 'Subscriber'),
       sales: dashboardData?.totalSubscribers || 0,
       module: "SUBSCRIBERS",
     },
-    { type: "Skill", sales: dashboardData?.totalSkills || 0, module: "SKILLS" },
+    { type: t('header.skill', 'Skill'), sales: dashboardData?.totalSkills || 0, module: "SKILLS" },
   ];
 
   // 2. Lọc dữ liệu: Chỉ giữ lại những gì User thực sự có quyền xem (GET)
@@ -89,7 +91,7 @@ const ViewDashboard = ({ dashboardData, user }) => {
       }}
     >
       <Title level={4} style={{ marginBottom: 30 }}>
-        📊 Thống kê hệ thống
+        📊 {t('header.dashboard', 'Thống kê hệ thống')}
       </Title>
 
       {/* Nếu filteredData có phần tử, biểu đồ sẽ hiện.
@@ -102,7 +104,7 @@ const ViewDashboard = ({ dashboardData, user }) => {
       ) : (
         <Empty
           style={{ padding: "40px 0" }}
-          description="Bạn không có quyền truy cập dữ liệu thống kê của các module này."
+          description={t('common.accessDenied', 'Bạn không có quyền truy cập dữ liệu thống kê của các module này.')}
         />
       )}
     </div>

@@ -17,6 +17,7 @@ import {
   Typography,
 } from "antd";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import CreateCompany from "./modal.create.company";
 import { callDeleteCompany } from "../../../services/api.service";
 import UpdateCompany from "./modal.update.company";
@@ -26,6 +27,7 @@ import dayjs from "dayjs";
 const { Text } = Typography;
 
 const ViewCompany = (props) => {
+  const { t } = useTranslation();
   // Nhận thêm total từ props để hiển thị tổng số trang
   const { companyData, page, size, fetchCompanies, total, loading } = props;
   const [isOpenCreateCompany, setIsOpenCreateCompany] = useState(false);
@@ -61,13 +63,13 @@ const ViewCompany = (props) => {
     const res = await callDeleteCompany(id);
     if (res.data) {
       notification.success({
-        message: "Xóa thành công",
-        description: "Đã xóa công ty khỏi hệ thống",
+        message: t("message.deleteSuccess"),
+        description: t("company.details") + " " + t("message.deleteSuccess"),
       });
       fetchCompanies({ page, size }); // Load lại trang hiện tại
     } else {
       notification.error({
-        message: "Lỗi xóa dữ liệu",
+        message: t("message.error"),
         description: res.message,
       });
     }
@@ -75,27 +77,27 @@ const ViewCompany = (props) => {
 
   const columns = [
     {
-      title: "STT",
+      title: t("common.stt"),
       width: 80,
       align: "center",
       render: (_, __, index) => (page - 1) * size + index + 1,
     },
     {
-      title: "Tên công ty",
+      title: t("common.companyName"),
       dataIndex: "name",
       render: (text) => <Text strong>{text}</Text>,
     },
     {
-      title: "Địa chỉ",
+      title: t("common.address"),
       dataIndex: "address",
     },
     {
-      title: "Ngày tạo",
+      title: t("common.createdAt"),
       dataIndex: "createdAt",
       render: (date) => (date ? dayjs(date).format("DD/MM/YYYY HH:mm") : "-"),
     },
     {
-      title: "Thao tác",
+      title: t("common.actions"),
       key: "action",
       width: 120,
       align: "center",
@@ -116,10 +118,10 @@ const ViewCompany = (props) => {
             }}
           />
           <Popconfirm
-            title="Xác nhận xóa công ty?"
+            title={t("company.deleteConfirm")}
             onConfirm={() => handleDeleteCompany(record.id)}
-            okText="Xóa"
-            cancelText="Hủy"
+            okText={t("common.delete")}
+            cancelText={t("common.cancel")}
           >
             <DeleteOutlined
               style={{ color: "red", cursor: "pointer", fontSize: 17 }}
@@ -136,20 +138,20 @@ const ViewCompany = (props) => {
       <Card style={{ marginBottom: 20 }}>
         <Space size="large" wrap>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Text>Tên:</Text>
+            <Text>{t("common.name")}:</Text>
             <Input
               value={searchName}
-              placeholder="Nhập tên công ty"
+              placeholder={t("company.searchByName")}
               style={{ width: 250 }}
               onChange={(e) => setSearchName(e.target.value)}
               onPressEnter={handleSearch}
             />
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Text>Địa chỉ:</Text>
+            <Text>{t("common.address")}:</Text>
             <Input
               value={searchAddress}
-              placeholder="Nhập địa chỉ"
+              placeholder={t("company.searchByAddress")}
               style={{ width: 250 }}
               onChange={(e) => setSearchAddress(e.target.value)}
               onPressEnter={handleSearch}
@@ -160,10 +162,10 @@ const ViewCompany = (props) => {
             icon={<SearchOutlined />}
             onClick={handleSearch}
           >
-            Tìm kiếm
+            {t("common.search")}
           </Button>
           <Button icon={<ReloadOutlined />} onClick={handleReset}>
-            Reset
+            {t("common.reset")}
           </Button>
         </Space>
       </Card>
@@ -172,7 +174,7 @@ const ViewCompany = (props) => {
       <Card
         title={
           <Text strong style={{ fontSize: 18 }}>
-            Quản lý công ty
+            {t("header.manageCompanies")}
           </Text>
         }
         extra={
@@ -181,7 +183,7 @@ const ViewCompany = (props) => {
             icon={<PlusOutlined />}
             onClick={() => setIsOpenCreateCompany(true)}
           >
-            Thêm mới
+            {t("common.addNew")}
           </Button>
         }
       >

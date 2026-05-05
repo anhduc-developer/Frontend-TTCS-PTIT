@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Row,
   Col,
@@ -17,6 +18,7 @@ import { fetchAllCompanies } from "../../../services/api.service";
 const { Title, Text } = Typography;
 
 const CompanyPage = () => {
+  const { t } = useTranslation();
   const [companyData, setCompanyData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,7 +66,7 @@ const CompanyPage = () => {
   if (loading) {
     return (
       <div style={{ padding: 100, textAlign: "center" }}>
-        <Spin size="large" tip="Đang tải danh sách công ty..." />
+        <Spin size="large" tip={t("message.loading")} />
       </div>
     );
   }
@@ -77,10 +79,10 @@ const CompanyPage = () => {
         {/* 1. THANH TÌM KIẾM */}
         <div style={{ marginBottom: 40, textAlign: "center" }}>
           <Title level={2} style={{ marginBottom: 20 }}>
-            Khám phá các Doanh nghiệp hàng đầu
+            {t("header.allCompanies")}
           </Title>
           <Input
-            placeholder="Nhập tên công ty hoặc địa điểm..."
+            placeholder={t("common.searchPlaceholder")}
             prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
             allowClear
             size="large"
@@ -213,7 +215,9 @@ const CompanyPage = () => {
           <Empty
             description={
               <span>
-                Không tìm thấy công ty phù hợp với "<b>{searchQuery}</b>"
+                {t("company.notFoundMatching", {
+                  defaultValue: `${t("company.notFoundMatching")} "${searchQuery}"`,
+                })}
               </span>
             }
           />

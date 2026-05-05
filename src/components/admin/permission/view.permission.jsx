@@ -24,11 +24,13 @@ import {
   VerticalAlignMiddleOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { useTranslation } from "react-i18next";
 import CreatePermission from "./modal.create.permission";
 import { callDeletePermissionAPI } from "../../../services/api.service";
 import UpdatePermisison from "./modal.update.permission";
 const { Text } = Typography;
 const ViewPermission = (props) => {
+  const { t } = useTranslation();
   const { page, size, total, fetchPermissions, permissionData } = props;
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [isOpenUpdate, setIsOpenUpdate] = useState(false);
@@ -60,11 +62,11 @@ const ViewPermission = (props) => {
   const handleDeletePermission = async (id) => {
     const res = await callDeletePermissionAPI(id);
     if (res.data) {
-      notification.success({ message: "Xóa Permission Thành Công!" });
+      notification.success({ message: t('message.deleteSuccess', 'Xóa Permission Thành Công!') });
       fetchPermissions();
     } else {
       notification.error({
-        message: "Lỗi xóa",
+        message: t('message.error', 'Lỗi xóa'),
         description: res.message,
       });
     }
@@ -72,15 +74,15 @@ const ViewPermission = (props) => {
 
   const columns = [
     {
-      title: "Id",
+      title: t('permission.id', 'Id'),
       dataIndex: "id",
       width: 60,
       render: (text) => <a style={{ color: "#1890ff" }}>{text}</a>,
     },
-    { title: "Name", dataIndex: "name", sorter: true },
-    { title: "API", dataIndex: "apiPath", sorter: true },
+    { title: t('permission.name', 'Name'), dataIndex: "name", sorter: true },
+    { title: t('permission.api', 'API'), dataIndex: "apiPath", sorter: true },
     {
-      title: "Method",
+      title: t('permission.method', 'Method'),
       dataIndex: "method",
       render: (method) => {
         const colors = {
@@ -96,14 +98,14 @@ const ViewPermission = (props) => {
         );
       },
     },
-    { title: "Module", dataIndex: "module", sorter: true },
+    { title: t('permission.module', 'Module'), dataIndex: "module", sorter: true },
     {
-      title: "Ngày tạo",
+      title: t('permission.createdAt', 'Ngày tạo'),
       dataIndex: "createdAt",
       render: (t) => (t ? dayjs(t).format("DD/MM/YYYY HH:mm") : "-"),
     },
     {
-      title: "Actions",
+      title: t('permission.actions', 'Actions'),
       width: 100,
       align: "center",
       render: (_, record) => (
@@ -116,7 +118,7 @@ const ViewPermission = (props) => {
             }}
           />
           <Popconfirm
-            title="Xóa?"
+            title={t('permission.confirmDelete', 'Xóa?')}
             onConfirm={() => handleDeletePermission(record.id)}
           >
             <DeleteOutlined
@@ -144,12 +146,12 @@ const ViewPermission = (props) => {
             <Col span={6}>
               <Form.Item
                 name="name"
-                label={<b>Name</b>}
+                label={<b>{t('permission.permissionName', 'Name')}</b>}
                 style={{ marginBottom: 0 }}
               >
                 <Input
                   prefix={<SearchOutlined />}
-                  placeholder="Nhập tên..."
+                  placeholder={t('permission.permissionNamePlaceholder', 'Nhập tên...')}
                   allowClear
                 />
               </Form.Item>
@@ -157,12 +159,12 @@ const ViewPermission = (props) => {
             <Col span={6}>
               <Form.Item
                 name="apiPath"
-                label={<b>API</b>}
+                label={<b>{t('permission.apiPath', 'API')}</b>}
                 style={{ marginBottom: 0 }}
               >
                 <Input
                   prefix={<SearchOutlined />}
-                  placeholder="Nhập API..."
+                  placeholder={t('permission.apiPathPlaceholder', 'Nhập API...')}
                   allowClear
                 />
               </Form.Item>
@@ -170,11 +172,11 @@ const ViewPermission = (props) => {
             <Col span={4}>
               <Form.Item
                 name="method"
-                label={<b>METHOD</b>}
+                label={<b>{t('permission.method', 'METHOD')}</b>}
                 style={{ marginBottom: 0 }}
               >
                 <Select
-                  placeholder="Chọn Method"
+                  placeholder={t('permission.methodPlaceholder', 'Chọn Method')}
                   allowClear
                   options={[
                     { label: "GET", value: "GET" },
@@ -188,11 +190,11 @@ const ViewPermission = (props) => {
             <Col span={4}>
               <Form.Item
                 name="module"
-                label={<b>MODULE</b>}
+                label={<b>{t('permission.module', 'MODULE')}</b>}
                 style={{ marginBottom: 0 }}
               >
                 <Select
-                  placeholder="Chọn module"
+                  placeholder={t('permission.modulePlaceholder', 'Chọn module')}
                   allowClear
                   options={[
                     { label: "USERS", value: "USERS" },
@@ -212,10 +214,10 @@ const ViewPermission = (props) => {
                   icon={<SearchOutlined />}
                   htmlType="submit"
                 >
-                  Lọc
+                  {t('common.filter', 'Lọc')}
                 </Button>
                 <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                  Reset
+                  {t('common.reset', 'Reset')}
                 </Button>
               </Space>
             </Col>
@@ -230,14 +232,14 @@ const ViewPermission = (props) => {
           style={{ marginBottom: 16 }}
         >
           <Text strong style={{ fontSize: 16 }}>
-            Danh sách Permissions
+            {t('permission.viewTitle', 'Danh sách Permissions')}
           </Text>
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => setIsOpenCreate(true)}
           >
-            Thêm mới
+            {t('common.addNew', 'Thêm mới')}
           </Button>
         </Flex>
 
@@ -252,7 +254,7 @@ const ViewPermission = (props) => {
             showSizeChanger: true,
             pageSizeOptions: ["10", "20", "50"],
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} trên ${total} hàng`,
+              t('common.paginationText', '{{start}}-{{end}} trên {{total}} hàng', { start: range[0], end: range[1], total }),
             onChange: (p, s) => {
               // Gọi lại hàm fetch khi người dùng nhấn chuyển trang hoặc đổi size
               fetchPermissions({ page: p, size: s });

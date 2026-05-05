@@ -11,6 +11,7 @@ import {
   Spin,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import {
@@ -19,6 +20,7 @@ import {
 } from "../../../services/api.service";
 
 const CreateCompany = (props) => {
+  const { t } = useTranslation();
   const { isOpenCreateCompany, setIsOpenCreateCompany, fetchCompanies } = props;
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -52,7 +54,7 @@ const CreateCompany = (props) => {
 
   const onFinish = async (values) => {
     if (!selectedFile) {
-      notification.error({ message: "Vui lòng chọn logo công ty!" });
+      notification.error({ message: t("company.selectLogo") });
       return;
     }
 
@@ -74,22 +76,22 @@ const CreateCompany = (props) => {
         const res = await createCompanyAPI(data);
         if (res.data) {
           notification.success({
-            message: "Tạo mới thành công!",
-            description: `Công ty ${values.name} đã được tạo.`,
+            message: t("company.createSuccess"),
+            description: `${t("header.company")} ${values.name} ${t("message.createSuccess")}`,
           });
           handleCancel(); // Đóng modal và reset data
           fetchCompanies();
         } else {
           notification.error({
-            message: "Lỗi tạo công ty",
-            description: res.message || "Vui lòng kiểm tra lại dữ liệu",
+            message: t("company.createError"),
+            description: res.message || t("error.checkData"),
           });
         }
       } else {
-        notification.error({ message: "Upload ảnh thất bại!" });
+        notification.error({ message: t("company.uploadFailed") });
       }
     } catch (error) {
-      notification.error({ message: "Có lỗi xảy ra, vui lòng thử lại!" });
+      notification.error({ message: t("error.errorOccurred") });
     } finally {
       setLoading(false);
     }
@@ -97,13 +99,13 @@ const CreateCompany = (props) => {
 
   return (
     <Modal
-      title="Tạo mới Company"
+      title={t("company.createTitle")}
       open={isOpenCreateCompany}
       onOk={() => form.submit()}
       onCancel={handleCancel}
       width={800}
-      okText="Tạo mới"
-      cancelText="Hủy"
+      okText={t("company.createButton")}
+      cancelText={t("common.cancel")}
       confirmLoading={loading}
       maskClosable={false} // Tránh bấm nhầm ra ngoài làm mất dữ liệu đang nhập
     >
@@ -118,19 +120,22 @@ const CreateCompany = (props) => {
           <Row gutter={20}>
             <Col span={18}>
               <Form.Item
-                label="Tên công ty"
+                label={t("form.companyName")}
                 name="name"
                 rules={[
-                  { required: true, message: "Vui lòng nhập tên công ty!" },
+                  {
+                    required: true,
+                    message: t("validation.pleaseEnterCompanyName"),
+                  },
                 ]}
               >
-                <Input placeholder="Nhập tên công ty" />
+                <Input placeholder={t("company.nameInput")} />
               </Form.Item>
             </Col>
 
             <Col span={6}>
               <Form.Item
-                label="Nổi bật (Top)"
+                label={t("company.featured")}
                 name="outstanding"
                 valuePropName="checked"
               >
@@ -142,9 +147,11 @@ const CreateCompany = (props) => {
           <Row gutter={20}>
             <Col span={8}>
               <Form.Item
-                label="Ảnh Logo"
+                label={t("form.companyLogo")}
                 name="logo"
-                rules={[{ required: true, message: "Vui lòng tải lên logo!" }]}
+                rules={[
+                  { required: true, message: t("validation.pleaseUploadLogo") },
+                ]}
                 // Không cần getValueFromEvent phức tạp vì ta quản lý qua handleChange
               >
                 <Upload
@@ -171,19 +178,27 @@ const CreateCompany = (props) => {
 
             <Col span={16}>
               <Form.Item
-                label="Địa chỉ"
+                label={t("form.companyAddress")}
                 name="address"
-                rules={[{ required: true, message: "Vui lòng nhập địa chỉ!" }]}
+                rules={[
+                  {
+                    required: true,
+                    message: t("validation.pleaseEnterAddress"),
+                  },
+                ]}
               >
-                <Input.TextArea rows={4} placeholder="Nhập địa chỉ công ty" />
+                <Input.TextArea
+                  rows={4}
+                  placeholder={t("company.addressInput")}
+                />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item label="Miêu tả" name="description">
+          <Form.Item label={t("form.companyDescription")} name="description">
             <ReactQuill
               theme="snow"
-              placeholder="Nhập nội dung miêu tả..."
+              placeholder={t("company.descriptionInput")}
               style={{ height: "200px", marginBottom: "50px" }}
             />
           </Form.Item>

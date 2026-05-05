@@ -1,17 +1,20 @@
 import { Col, Form, Input, Modal, notification, Row, Select } from "antd";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { callPutPermissionAPI } from "../../../services/api.service";
 
-const UpdatePermisison = (props) => {
+const UpdatePermission = (props) => {
+  const { t } = useTranslation();
   const {
     isOpenUpdate,
     setIsOpenUpdate,
     dataPermissionUpdate,
     fetchPermissions,
   } = props;
+
   const [form] = Form.useForm();
 
-  // Reset và set lại dữ liệu mỗi khi dataPermissionUpdate thay đổi
+  // ✅ map data vào form
   useEffect(() => {
     if (dataPermissionUpdate && isOpenUpdate) {
       form.setFieldsValue({
@@ -23,102 +26,134 @@ const UpdatePermisison = (props) => {
     }
   }, [dataPermissionUpdate, isOpenUpdate, form]);
 
+  const handleCancel = () => {
+    setIsOpenUpdate(false);
+    form.resetFields();
+  };
+
   const onFinish = async (values) => {
-    const data = {
-      id: dataPermissionUpdate?.id, // Đảm bảo lấy đúng ID
-      ...values,
-    };
-    const res = await callPutPermissionAPI(data);
-    if (res.data) {
-      notification.success({
-        message: "Cập nhật thành công",
-        description: "Thông tin Permission đã được thay đổi.",
+    try {
+      const res = await callPutPermissionAPI({
+        id: dataPermissionUpdate?.id,
+        ...values,
       });
-      handleCancel(); // Dùng hàm cancel chung để reset form
-      fetchPermissions({});
-    } else {
+
+      if (res.data) {
+        notification.success({
+          message: t("permission.updateSuccess"),
+        });
+
+        handleCancel();
+        fetchPermissions();
+      } else {
+        notification.error({
+          message: t("message.error"),
+          description: res.message || t("error.checkData"),
+        });
+      }
+    } catch (error) {
+      const msg = error?.response?.data?.message || error?.message || "";
+
+      const isDuplicate =
+        msg.toLowerCase().includes("duplicate") ||
+        msg.toLowerCase().includes("exists") ||
+        msg.toLowerCase().includes("constraint");
+
       notification.error({
-        message: "Lỗi cập nhật",
-        description: res.message || "Vui lòng kiểm tra lại dữ liệu",
+        message: t("message.error"),
+        description: isDuplicate
+          ? "Permission already exists"
+          : t("error.tryAgain"),
       });
     }
   };
 
-  const handleCancel = () => {
-    setIsOpenUpdate(false);
-    form.resetFields(); // Quan trọng: Reset để lần mở sau không bị dính data cũ của record trước
-  };
-
   return (
     <Modal
-      title="Cập nhật Permission" // Sửa lại tiêu đề cho đúng
+      title={t("permission.updateTitle")}
       open={isOpenUpdate}
       onCancel={handleCancel}
-      width={800}
       onOk={() => form.submit()}
-      okText="Cập nhật"
-      cancelText="Hủy"
-      forceRender // Ép Ant Design render form ngay cả khi modal chưa mở để tránh mất data
+      width={800}
+      okText={t("common.edit")}
+      cancelText={t("common.cancel")}
+      forceRender
     >
       <Form form={form} layout="vertical" onFinish={onFinish}>
+        {/* ROW 1 */}
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="Tên Permission"
+              label={t("permission.permissionName")}
               name="name"
-              rules={[{ required: true, message: "Vui lòng nhập tên!" }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
-              <Input placeholder="Nhập tên permisison" />
+              <Input placeholder={t("permission.permissionNamePlaceholder")} />
             </Form.Item>
           </Col>
 
           <Col span={12}>
             <Form.Item
-              label="Method"
+              label={t("permission.method")}
               name="method"
-              rules={[{ required: true, message: "Vui lòng chọn method!" }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
-                placeholder="Chọn method"
+                placeholder={t("permission.methodPlaceholder")}
                 options={[
-                  { label: "GET", value: "GET" },
-                  { label: "POST", value: "POST" },
-                  { label: "PUT", value: "PUT" },
-                  { label: "DELETE", value: "DELETE" },
+                  { label: t("permission.methodGET"), value: "GET" },
+                  { label: t("permission.methodPOST"), value: "POST" },
+                  { label: t("permission.methodPUT"), value: "PUT" },
+                  { label: t("permission.methodDELETE"), value: "DELETE" },
                 ]}
               />
             </Form.Item>
           </Col>
         </Row>
+
+        {/* ROW 2 */}
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="API Path"
+              label={t("permission.apiPath")}
               name="apiPath"
-              rules={[{ required: true, message: "Vui lòng nhập API Path!" }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
-              <Input placeholder="Nhập API Path" />
+              <Input placeholder={t("permission.apiPathPlaceholder")} />
             </Form.Item>
           </Col>
+
           <Col span={12}>
             <Form.Item
-              label="Module"
+              label={t("permission.module")}
               name="module"
-              rules={[{ required: true, message: "Vui lòng chọn Module!" }]}
+              rules={[{ required: true, message: t("validation.required") }]}
             >
               <Select
-                placeholder="Thuộc Module"
+                placeholder={t("permission.modulePlaceholder")}
                 options={[
-                  { label: "USERS", value: "USERS" },
-                  { label: "JOBS", value: "JOBS" },
-                  { label: "SKILLS", value: "SKILLS" },
-                  { label: "COMPANIES", value: "COMPANIES" },
-                  { label: "PERMISSIONS", value: "PERMISSIONS" },
-                  { label: "RESUMES", value: "RESUMES" },
-                  { label: "FILES", value: "FILES" },
-                  { label: "ROLES", value: "ROLES" },
-                  { label: "SUBSCRIBERS", value: "SUBSCRIBER" },
-                  { label: "DASHBOARDS", value: "DASHBOARDS" },
+                  { label: t("permission.moduleUSERS"), value: "USERS" },
+                  { label: t("permission.moduleJOBS"), value: "JOBS" },
+                  { label: t("permission.moduleSKILLS"), value: "SKILLS" },
+                  {
+                    label: t("permission.moduleCOMPANIES"),
+                    value: "COMPANIES",
+                  },
+                  {
+                    label: t("permission.modulePERMISSIONS"),
+                    value: "PERMISSIONS",
+                  },
+                  { label: t("permission.moduleRESUMES"), value: "RESUMES" },
+                  { label: t("permission.moduleFILES"), value: "FILES" },
+                  { label: t("permission.moduleROLES"), value: "ROLES" },
+                  {
+                    label: t("permission.moduleSUBSCRIBERS"),
+                    value: "SUBSCRIBERS",
+                  }, // ✅ FIX
+                  {
+                    label: t("permission.moduleDASHBOARDS"),
+                    value: "DASHBOARDS",
+                  },
                 ]}
               />
             </Form.Item>
@@ -129,4 +164,4 @@ const UpdatePermisison = (props) => {
   );
 };
 
-export default UpdatePermisison;
+export default UpdatePermission;

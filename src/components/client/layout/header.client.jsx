@@ -19,14 +19,17 @@ import {
   DashboardOutlined,
 } from "@ant-design/icons";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "../../../styles/global.css";
 import logo from "../../../assets/react.svg";
 import { AuthContext } from "../../context/auth.context";
+import LanguageSwitcher from "../../LanguageSwitcher";
 
 const { Header } = Layout;
 const { Text } = Typography;
 
 const AppHeader = ({ isHome }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const currentPath = location.pathname;
 
@@ -45,7 +48,7 @@ const AppHeader = ({ isHome }) => {
       address: "",
     });
     setIsAuthenticated(false);
-    message.success("Đăng xuất thành công");
+    message.success(t("message.logoutSuccess"));
     navigate("/");
   };
 
@@ -53,17 +56,17 @@ const AppHeader = ({ isHome }) => {
     {
       key: "/",
       icon: <GithubOutlined />,
-      label: <Link to="/">Trang Chủ</Link>,
+      label: <Link to="/">{t("header.home")}</Link>,
     },
     {
       key: "/company",
       icon: <BankOutlined />,
-      label: <Link to="/company">Tất cả công ty</Link>,
+      label: <Link to="/company">{t("header.allCompanies")}</Link>,
     },
     {
       key: "/job",
       icon: <SolutionOutlined />,
-      label: <Link to="/job">Tất cả Job</Link>,
+      label: <Link to="/job">{t("header.allJobs")}</Link>,
     },
   ];
 
@@ -71,7 +74,7 @@ const AppHeader = ({ isHome }) => {
   const items = [
     {
       key: "profile",
-      label: "Thông tin tài khoản",
+      label: t("header.accountInfo"),
       icon: <UserOutlined />,
       onClick: () => navigate("/profile"),
     },
@@ -81,14 +84,14 @@ const AppHeader = ({ isHome }) => {
       ? [
           {
             key: "admin",
-            label: <Link to="/admin">Trang quản trị</Link>,
+            label: <Link to="/admin">{t("header.adminPage")}</Link>,
             icon: <DashboardOutlined />,
           },
         ]
       : []),
     {
       key: "logout",
-      label: "Đăng xuất",
+      label: t("header.logout"),
       icon: <LogoutOutlined />,
       danger: true,
       onClick: handleLogout,
@@ -120,11 +123,12 @@ const AppHeader = ({ isHome }) => {
       />
 
       <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+        <LanguageSwitcher />
         {/* Quan trọng: Dùng biến isAuthenticated để quyết định render */}
         {isAuthenticated === true ? (
           <Space size="middle">
             <Text style={{ color: "rgba(255, 255, 255, 0.85)" }}>
-              Welcome, {user?.fullName || user?.name || "Thành viên"}
+              {t("header.welcome")}, {user?.fullName || user?.name || t("header.member")}
             </Text>
             <Dropdown
               menu={{ items }} // Truyền biến items vừa tính ở trên
@@ -159,10 +163,10 @@ const AppHeader = ({ isHome }) => {
               style={{ color: "white" }}
               onClick={() => navigate("/login")}
             >
-              Đăng nhập
+              {t("header.login")}
             </Button>
             <Button type="primary" onClick={() => navigate("/register")}>
-              Đăng ký
+              {t("header.register")}
             </Button>
           </Space>
         )}
